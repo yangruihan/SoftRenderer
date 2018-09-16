@@ -72,7 +72,7 @@ class Color():
         return cls._Black
 
     def hex(self):
-        return rgb2Hex(self.r, self.g, self.b, self.a)
+        return rgb2hex(self.r, self.g, self.b, self.a)
 
     def hex_str(self):
-        return rgb2HexStr(self.r, self.g, self.b, self.a)
+        return rgb2hex_str(self.r, self.g, self.b, self.a)

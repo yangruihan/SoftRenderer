@@ -15,27 +15,14 @@ HEIGHT = 400
 
 rc = RendererContext(WIDTH, HEIGHT)
 
-def drawFunc():
+def draw_func():
     glClearColor(1, 1, 1, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
     rc.clear_pixels()
 
-    for i in range(0, 200):
-        for j in range(0, 200):
-            rc.set_pixel(i, j, Color.Red())
-
-    for i in range(200, 400):
-        for j in range(0, 200):
-            rc.set_pixel(i, j, Color.Green())
-
-    for i in range(0, 200):
-        for j in range(200, 400):
-            rc.set_pixel(i, j, Color.Blue())
-
-    for i in range(200, 400):
-        for j in range(200, 400):
-            rc.set_pixel(i, j, Color.White())
+    draw_line(rc, 0, 0, 399, 399, Color.Red())
+    draw_line(rc, 0, 399, 399, 0, Color.Blue())
 
     glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels().transpose()).data)
     glFlush()
@@ -44,5 +31,5 @@ glutInit()
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
 glutInitWindowSize(400, 400)
 glutCreateWindow("Test")
-glutDisplayFunc(drawFunc)
+glutDisplayFunc(draw_func)
 glutMainLoop()
