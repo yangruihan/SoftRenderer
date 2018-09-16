@@ -1,6 +1,8 @@
 from numpy import *
 
-from common_utils import *
+
+import common_utils
+
 
 class RendererContext():
     
@@ -18,12 +20,15 @@ class RendererContext():
     def set_pixel(self, x, y, color):
         self._pixels[x, y] = color.hex()
 
+    @property
     def width(self):
         return self._width
 
+    @property
     def height(self):
         return self._height
 
+    @property
     def pixels(self):
         return self._pixels
 
@@ -72,7 +77,46 @@ class Color():
         return cls._Black
 
     def hex(self):
-        return rgb2hex(self.r, self.g, self.b, self.a)
+        return common_utils.rgb2hex(self.r, self.g, self.b, self.a)
 
     def hex_str(self):
-        return rgb2hex_str(self.r, self.g, self.b, self.a)
+        return common_utils.rgb2hex_str(self.r, self.g, self.b, self.a)
+
+
+class Vector2():
+
+    _Zero = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return 'Vector2(%s, %s)' % (self.x, self.y)
+
+    @classmethod
+    def Zero(cls):
+        if cls._Zero is None:
+            cls._Zero = Vector2(0, 0)
+        return cls._Zero
+
+
+class Line2d():
+
+    def __init__(self, x1, y1, x2, y2):
+        if isinstance(x1, Vector2):
+            start = x1
+        else:
+            start = Vector2(x1, y1)
+
+        if isinstance(y1, Vector2):
+            end = y1
+        else:
+            end = Vector2(x2, y2)
+
+        self.start = start
+        self.end = end
+    
+    def __str__(self):
+        return 'Line2d(start (%s, %s), end (%s, %s))' \
+                % (self.start.x, self.start.y, self.end.x, self.end.y)

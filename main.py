@@ -21,10 +21,12 @@ def draw_func():
 
     rc.clear_pixels()
 
-    draw_line(rc, 0, 0, 399, 399, Color.Red())
-    draw_line(rc, 0, 399, 399, 0, Color.Blue())
+    draw_line(rc, Line2d(0, 0, 399, 399), Color.Red())
+    draw_line(rc, Line2d(0, 399, 399, 0), Color.Blue())
+    draw_line(rc, Line2d(0, 199, 399, 199), Color.Green())
+    draw_line(rc, Line2d(199, 0, 199, 399), Color.White())
 
-    glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels().transpose()).data)
+    glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels.transpose()).data)
     glFlush()
  
 glutInit()
