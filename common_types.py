@@ -1,15 +1,14 @@
 from numpy import *
 
-
 import common_utils
 
 
-class RendererContext():
-    
+class RendererContext:
+
     def __init__(self, w, h):
         self._width = w
         self._height = h
-        self._pixels = zeros((w, h), dtype=uint32)
+        self._pixels = zeros((w + 1, h + 1), dtype=uint32)
 
     def clear_pixels(self):
         self._pixels.fill(0)
@@ -32,8 +31,8 @@ class RendererContext():
     def pixels(self):
         return self._pixels
 
-class Color():
 
+class Color:
     _Red = None
     _Green = None
     _Blue = None
@@ -45,6 +44,9 @@ class Color():
         self.g = g
         self.b = b
         self.a = a
+
+    def __str__(self):
+        return 'Color(%s, %s, %s, %s)' % (self.r, self.g, self.b, self.a)
 
     @classmethod
     def Red(cls):
@@ -83,8 +85,7 @@ class Color():
         return common_utils.rgb2hex_str(self.r, self.g, self.b, self.a)
 
 
-class Vector2():
-
+class Vector2:
     _Zero = None
 
     def __init__(self, x, y):
@@ -101,7 +102,7 @@ class Vector2():
         return cls._Zero
 
 
-class Line2d():
+class Line2d:
 
     def __init__(self, x1, y1, x2, y2):
         if isinstance(x1, Vector2):
@@ -116,7 +117,7 @@ class Line2d():
 
         self.start = start
         self.end = end
-    
+
     def __str__(self):
         return 'Line2d(start (%s, %s), end (%s, %s))' \
-                % (self.start.x, self.start.y, self.end.x, self.end.y)
+               % (self.start.x, self.start.y, self.end.x, self.end.y)

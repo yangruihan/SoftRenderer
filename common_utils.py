@@ -4,26 +4,33 @@ import common_types
 def rgb2hex(r, g, b, a):
     return int('%02x%02x%02x%02x' % (r, g, b, a), 16)
 
+
 def rgb2hex_str(r, g, b, a):
     return '%02x%02x%02x%02x' % (r, g, b, a)
+
 
 # ---- draw -----
 
 def draw_pixel(rc, x, y, color):
     rc.set_pixel(x, y, color)
 
+
 def draw_line(rc, line, color):
-    (ret, line) = cohen_sutherland_line_clip(line, common_types.Vector2.Zero(), common_types.Vector2(rc.width, rc.height))
-    
+
+    print('[Log]Draw Line Call: (line: %s, color: %s)' % (line, color))
+
+    (ret, line) = cohen_sutherland_line_clip(line, common_types.Vector2.Zero(),
+                                             common_types.Vector2(rc.width, rc.height))
+
     if not ret:
-        print("line was aborted")
+        print('[Log]Line was aborted')
         return
     else:
-        print("will draw line %s" % line)
+        print('[Log]Will draw line %s' % line)
 
     (x1, y1) = (line.start.x, line.start.y)
     (x2, y2) = (line.end.x, line.end.y)
-    
+
     # draw a pixel
     if x1 == x2 and y1 == y2:
         draw_pixel(rc, x1, y1, color)
@@ -66,18 +73,19 @@ def draw_line(rc, line, color):
                 draw_pixel(rc, x, y, color)
                 rem += dx
                 if rem >= dy:
-                    rem -= dx
+                    rem -= dy
                     x += 1 if x2 >= x1 else -1
             draw_pixel(rc, x2, y2, color)
 
-E_LEFT   = 1
-E_TOP    = 1 << 1
-E_RIGHT  = 1 << 2
+
+E_LEFT = 1
+E_TOP = 1 << 1
+E_RIGHT = 1 << 2
 E_BOTTOM = 1 << 3
-E_IN     = 0
+E_IN = 0
+
 
 def cohen_sutherland_line_clip(line, min_pos, max_pos):
-
     def encode(pos, min_pos, max_pos):
         code = E_IN
 
@@ -95,7 +103,7 @@ def cohen_sutherland_line_clip(line, min_pos, max_pos):
 
     (x1, y1) = (line.start.x, line.start.y)
     (x2, y2) = (line.end.x, line.end.y)
-    
+
     code1 = encode(common_types.Vector2(x1, y1), min_pos, max_pos)
     code2 = encode(common_types.Vector2(x2, y2), min_pos, max_pos)
 
@@ -106,7 +114,7 @@ def cohen_sutherland_line_clip(line, min_pos, max_pos):
             accept = True
             break
 
-        elif code1 & code2 == 1:
+        elif code1 & code2 != 0:
             break
 
         else:
@@ -126,13 +134,13 @@ def cohen_sutherland_line_clip(line, min_pos, max_pos):
                 y = y1 + (y2 - y1) * (max_pos.x - x1) / (x2 - x1)
 
             if code == code1:
-                (x1, y1) = (x, y)
+                (x1, y1) = (int(x), int(y))
                 code1 = encode(common_types.Vector2(x1, y1), min_pos, max_pos)
             else:
-                (x2, y2) = (x, y)
+                (x2, y2) = (int(x), int(y))
                 code2 = encode(common_types.Vector2(x2, y2), min_pos, max_pos)
 
     if accept:
-        return (True, common_types.Line2d(x1, y1, x2, y2))
+        return True, common_types.Line2d(x1, y1, x2, y2)
     else:
-        return (False, None)
+        return False, None
