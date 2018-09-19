@@ -1,4 +1,4 @@
-import common_types
+import common_types as ct
 
 
 def rgb2hex(r, g, b, a):
@@ -16,11 +16,10 @@ def draw_pixel(rc, x, y, color):
 
 
 def draw_line(rc, line, color):
-
     print('[Log]Draw Line Call: (line: %s, color: %s)' % (line, color))
 
-    (ret, line) = cohen_sutherland_line_clip(line, common_types.Vector2.Zero(),
-                                             common_types.Vector2(rc.width, rc.height))
+    (ret, line) = _cohen_sutherland_line_clip(line, ct.Vector2.zero(),
+                                              ct.Vector2(rc.width, rc.height))
 
     if not ret:
         print('[Log]Line was aborted')
@@ -85,7 +84,7 @@ E_BOTTOM = 1 << 3
 E_IN = 0
 
 
-def cohen_sutherland_line_clip(line, min_pos, max_pos):
+def _cohen_sutherland_line_clip(line, min_pos, max_pos):
     def encode(pos, min_pos, max_pos):
         code = E_IN
 
@@ -104,8 +103,8 @@ def cohen_sutherland_line_clip(line, min_pos, max_pos):
     (x1, y1) = (line.start.x, line.start.y)
     (x2, y2) = (line.end.x, line.end.y)
 
-    code1 = encode(common_types.Vector2(x1, y1), min_pos, max_pos)
-    code2 = encode(common_types.Vector2(x2, y2), min_pos, max_pos)
+    code1 = encode(ct.Vector2(x1, y1), min_pos, max_pos)
+    code2 = encode(ct.Vector2(x2, y2), min_pos, max_pos)
 
     accept = False
 
@@ -135,12 +134,55 @@ def cohen_sutherland_line_clip(line, min_pos, max_pos):
 
             if code == code1:
                 (x1, y1) = (int(x), int(y))
-                code1 = encode(common_types.Vector2(x1, y1), min_pos, max_pos)
+                code1 = encode(ct.Vector2(x1, y1), min_pos, max_pos)
             else:
                 (x2, y2) = (int(x), int(y))
-                code2 = encode(common_types.Vector2(x2, y2), min_pos, max_pos)
+                code2 = encode(ct.Vector2(x2, y2), min_pos, max_pos)
 
     if accept:
-        return True, common_types.Line2d(x1, y1, x2, y2)
+        return True, ct.Line2d(x1, y1, x2, y2)
     else:
         return False, None
+
+
+def draw_triangle(rc, v1, v2, v3, color):
+    # sort three vertices by y-coordinate
+    (v1, v2, v3) = sorted([v1, v2, v3], key=lambda v: v.y)
+
+    if v2.y == v3.y:
+        _fill_top_flat_triangle(rc, v1, v2, v3, color)
+    elif v2.y == v1.y:
+        _fill_bottom_flat_triangle(rc, v3, v1, v2, color)
+    else:
+        v4 = ct.Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
+        _fill_top_flat_triangle(rc, v1, v2, v4, color)
+        _fill_bottom_flat_triangle(rc, v3, v2, v4, color)
+
+
+def _fill_bottom_flat_triangle(rc, v1, v2, v3, color):
+    invslope1 = (v2.x - v1.x) / (v2.y - v1.y)
+    invslope2 = (v3.x - v1.x) / (v3.y - v1.y)
+
+    (cx1, cx2) = (v1.x, v1.x)
+
+    for y in range(v1.y, v2.y - 1, -1):
+        draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
+        cx1 += invslope1
+        cx2 += invslope2
+
+
+def _fill_top_flat_triangle(rc, v1, v2, v3, color):
+    invslope1 = (v2.x - v1.x) / (v2.y - v1.y)
+    invslope2 = (v3.x - v1.x) / (v3.y - v1.y)
+
+    (cx1, cx2) = (v1.x, v1.x)
+
+    for y in range(v1.y, v2.y + 1):
+        draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
+        cx1 += invslope1
+        cx2 += invslope2
+
+
+if __name__ == '__main__':
+    draw_triangle(None, ct.Vector2(0, 5), ct.Vector2(0, 200), ct.Vector2(0, 8), None)
+    pass

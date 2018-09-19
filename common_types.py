@@ -1,6 +1,7 @@
 from numpy import *
 
-import common_utils
+import common_utils as cu
+from Common.math import *
 
 
 class RendererContext:
@@ -49,57 +50,40 @@ class Color:
         return 'Color(%s, %s, %s, %s)' % (self.r, self.g, self.b, self.a)
 
     @classmethod
-    def Red(cls):
+    def red(cls):
         if cls._Red is None:
             cls._Red = Color(255, 0, 0, 255)
         return cls._Red
 
     @classmethod
-    def Green(cls):
+    def green(cls):
         if cls._Green is None:
             cls._Green = Color(0, 255, 0, 255)
         return cls._Green
 
     @classmethod
-    def Blue(cls):
+    def blue(cls):
         if cls._Blue is None:
             cls._Blue = Color(0, 0, 255, 255)
         return cls._Blue
 
     @classmethod
-    def White(cls):
+    def white(cls):
         if cls._White is None:
             cls._White = Color(255, 255, 255, 255)
         return cls._White
 
     @classmethod
-    def Black(cls):
+    def black(cls):
         if cls._Black is None:
             cls._Black = Color(0, 0, 0, 255)
         return cls._Black
 
     def hex(self):
-        return common_utils.rgb2hex(self.r, self.g, self.b, self.a)
+        return cu.rgb2hex(self.r, self.g, self.b, self.a)
 
     def hex_str(self):
-        return common_utils.rgb2hex_str(self.r, self.g, self.b, self.a)
-
-
-class Vector2:
-    _Zero = None
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return 'Vector2(%s, %s)' % (self.x, self.y)
-
-    @classmethod
-    def Zero(cls):
-        if cls._Zero is None:
-            cls._Zero = Vector2(0, 0)
-        return cls._Zero
+        return cu.rgb2hex_str(self.r, self.g, self.b, self.a)
 
 
 class Line2d:
