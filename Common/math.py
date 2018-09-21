@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 from math import sin, cos, acos, degrees, sqrt, atan2, asin
 
 
@@ -438,6 +441,10 @@ class Quaternion:
     @property
     def w(self):
         return self._w
+
+
+class Matrix4x4:
+    pass
 
 
 if __name__ == '__main__':

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 from numpy import *
 
 import common_utils as cu
@@ -34,7 +37,6 @@ class RendererContext:
 
 
 class Color:
-
     _Red = None
     _Green = None
     _Blue = None
