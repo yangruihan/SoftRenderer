@@ -88,16 +88,14 @@ class Color:
 
 class Line2d:
 
-    def __init__(self, x1, y1, x2, y2):
-        if isinstance(x1, Vector2):
-            start = x1
-        else:
-            start = Vector2(x1, y1)
-
-        if isinstance(y1, Vector2):
-            end = y1
-        else:
-            end = Vector2(x2, y2)
+    def __init__(self, *args):
+        args_len = len(args)
+        if args_len == 2:
+            start = args[0]
+            end = args[1]
+        elif args_len == 4:
+            start = Vector2(args[0], args[1])
+            end = Vector2(args[2], args[3])
 
         self.start = start
         self.end = end
