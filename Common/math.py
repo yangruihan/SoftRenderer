@@ -36,6 +36,77 @@ class Vector2:
         else:
             raise AttributeError
 
+    def __add__(self, other):
+        assert isinstance(other, Vector2)
+
+        return Vector2(self.x + other.x,
+                       self.y + other.y)
+
+    def __sub__(self, other):
+        assert isinstance(other, Vector2)
+
+        return Vector2(self.x - other.x,
+                       self.y - other.y)
+
+    def __mul__(self, other):
+        try:
+            s = float(other)
+            return Vector2(self.x * s,
+                           self.y * s)
+        except Exception:
+            raise TypeError
+
+    def __truediv__(self, other):
+        try:
+            s = float(other)
+            return Vector2(self.x / s,
+                           self.y / s)
+        except Exception:
+            raise TypeError
+
+    @staticmethod
+    def angle(from_v, to_v):
+        if not isinstance(from_v, Vector2) \
+                or not isinstance(to_v, Vector2):
+            raise TypeError
+
+        # cos(Theta) = (a * b) / ||a|| * ||b||
+        c = Vector2.dot(from_v, to_v)
+        d = from_v.magnitude() * to_v.magnitude()
+        return degrees(acos(c / d))
+
+    @staticmethod
+    def dot(v1, v2):
+        if not isinstance(v1, Vector2) \
+                or not isinstance(v2, Vector2):
+            raise TypeError
+
+        return v1.x * v2.x + v1.y * v2.y
+
+    @staticmethod
+    def cross(v1, v2):
+        if not isinstance(v1, Vector2) \
+                or not isinstance(v2, Vector2):
+            raise TypeError
+
+        return (v1.x * v2.y) - (v1.y * v2.x)
+
+    def magnitude(self):
+        return sqrt(self.x * self.x + self.y * self.y)
+
+    def sqr_magnitude(self):
+        return self.x * self.x + self.y * self.y
+
+    def normalized(self):
+        tmp = 1 / self.magnitude()
+        return Vector2(self.x * tmp,
+                       self.y * tmp)
+
+    def normalize(self):
+        tmp = 1 / self.magnitude()
+        self.x *= tmp
+        self.y *= tmp
+
     @classmethod
     def zero(cls):
         if cls._Zero is None:
