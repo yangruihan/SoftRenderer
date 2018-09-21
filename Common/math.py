@@ -1,4 +1,4 @@
-from math import sin, cos, acos, degrees
+from math import sin, cos, acos, degrees, sqrt
 
 
 class Vector2:
@@ -17,6 +17,24 @@ class Vector2:
 
     def __str__(self):
         return 'Vector2(%s, %s)' % (self.x, self.y)
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            if item == 0:
+                return self.x
+            elif item == 1:
+                return self.y
+            else:
+                raise IndexError
+        elif isinstance(item, str):
+            if item.lower() == 'x':
+                return self.x
+            elif item.lower() == 'y':
+                return self.y
+            else:
+                raise AttributeError
+        else:
+            raise AttributeError
 
     @classmethod
     def zero(cls):
@@ -43,6 +61,115 @@ class Vector3:
 
     def __str__(self):
         return 'Vector3(%s, %s, %s)' % (self.x, self.y, self.z)
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            if item == 0:
+                return self.x
+            elif item == 1:
+                return self.y
+            elif item == 2:
+                return self.z
+            else:
+                raise IndexError
+        elif isinstance(item, str):
+            if item.lower() == 'x':
+                return self.x
+            elif item.lower() == 'y':
+                return self.y
+            elif item.lower() == 'z':
+                return self.z
+            else:
+                raise AttributeError
+        else:
+            raise AttributeError
+
+    def __add__(self, other):
+        assert isinstance(other, Vector3)
+
+        return Vector3(self.x + other.x,
+                       self.y + other.y,
+                       self.z + other.z)
+
+    def __sub__(self, other):
+        assert isinstance(other, Vector3)
+
+        return Vector3(self.x - other.x,
+                       self.y - other.y,
+                       self.z - other.z)
+
+    def __mul__(self, other):
+        try:
+            s = float(other)
+            return Vector3(self.x * s,
+                           self.y * s,
+                           self.z * s)
+        except Exception:
+            raise TypeError
+
+    def __truediv__(self, other):
+        try:
+            s = float(other)
+            return Vector3(self.x / s,
+                           self.y / s,
+                           self.z / s)
+        except Exception:
+            raise TypeError
+
+    @staticmethod
+    def angle(from_v, to_v):
+        if not isinstance(from_v, Vector3) \
+                or not isinstance(to_v, Vector3):
+            raise TypeError
+
+        # cos(Theta) = (a * b) / ||a|| * ||b||
+        c = Vector3.dot(from_v, to_v)
+        d = from_v.magnitude() * to_v.magnitude()
+        return degrees(acos(c / d))
+
+    @staticmethod
+    def dot(v1, v2):
+        if not isinstance(v1, Vector3) \
+                or not isinstance(v2, Vector3):
+            raise TypeError
+
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+    @staticmethod
+    def cross(v1, v2):
+        if not isinstance(v1, Vector3) \
+                or not isinstance(v2, Vector3):
+            raise TypeError
+
+        return Vector3((v1.y * v2.z) - (v1.z * v2.y),
+                       (v1.z * v2.x) - (v1.x * v2.z),
+                       (v1.x * v2.y) - (v1.y * v2.x))
+
+    @staticmethod
+    def lerp(v1, v2, t):
+        if not isinstance(v1, Vector3) \
+                or not isinstance(v2, Vector3):
+            raise TypeError
+
+        return v1 + (v2 - v1) * t
+
+    def magnitude(self):
+        return sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+
+    def sqr_magnitude(self):
+        return self.x * self.x + self.y * self.y + self.z * self.z
+
+    def normalized(self):
+        tmp = 1 / self.magnitude()
+        return Vector3(self.x * tmp,
+                       self.y * tmp,
+                       self.z * tmp)
+
+    def normalize(self):
+        tmp = 1 / self.magnitude()
+        self.x *= tmp
+        self.y *= tmp
+        self.z *= tmp
 
     @classmethod
     def zero(cls):
