@@ -34,6 +34,7 @@ class RendererContext:
 
 
 class Color:
+
     _Red = None
     _Green = None
     _Blue = None
@@ -96,6 +97,8 @@ class Line2d:
         elif args_len == 4:
             start = Vector2(args[0], args[1])
             end = Vector2(args[2], args[3])
+        else:
+            raise AttributeError
 
         self.start = start
         self.end = end

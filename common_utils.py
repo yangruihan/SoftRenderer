@@ -85,20 +85,20 @@ E_IN = 0
 
 
 def _cohen_sutherland_line_clip(line, min_pos, max_pos):
-    def encode(pos, min_pos, max_pos):
-        code = E_IN
+    def encode(pos, _min_pos, _max_pos):
+        _code = E_IN
 
-        if pos.x < min_pos.x:
-            code |= E_LEFT
-        elif pos.x > max_pos.x:
-            code |= E_RIGHT
+        if pos.x < _min_pos.x:
+            _code |= E_LEFT
+        elif pos.x > _max_pos.x:
+            _code |= E_RIGHT
 
-        if pos.y < min_pos.y:
-            code |= E_BOTTOM
-        elif pos.y > max_pos.y:
-            code |= E_TOP
+        if pos.y < _min_pos.y:
+            _code |= E_BOTTOM
+        elif pos.y > _max_pos.y:
+            _code |= E_TOP
 
-        return code
+        return _code
 
     (x1, y1) = (line.start.x, line.start.y)
     (x2, y2) = (line.end.x, line.end.y)
@@ -160,27 +160,27 @@ def draw_triangle(rc, v1, v2, v3, color):
 
 
 def _fill_bottom_flat_triangle(rc, v1, v2, v3, color):
-    invslope1 = (v2.x - v1.x) / (v2.y - v1.y)
-    invslope2 = (v3.x - v1.x) / (v3.y - v1.y)
+    inv_slope1 = (v2.x - v1.x) / (v2.y - v1.y)
+    inv_slope2 = (v3.x - v1.x) / (v3.y - v1.y)
 
     (cx1, cx2) = (v1.x, v1.x)
 
     for y in range(v1.y, v2.y - 1, -1):
         draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
-        cx1 += invslope1
-        cx2 += invslope2
+        cx1 += inv_slope1
+        cx2 += inv_slope2
 
 
 def _fill_top_flat_triangle(rc, v1, v2, v3, color):
-    invslope1 = (v2.x - v1.x) / (v2.y - v1.y)
-    invslope2 = (v3.x - v1.x) / (v3.y - v1.y)
+    inv_slope1 = (v2.x - v1.x) / (v2.y - v1.y)
+    inv_slope2 = (v3.x - v1.x) / (v3.y - v1.y)
 
     (cx1, cx2) = (v1.x, v1.x)
 
     for y in range(v1.y, v2.y + 1):
         draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
-        cx1 += invslope1
-        cx2 += invslope2
+        cx1 += inv_slope1
+        cx2 += inv_slope2
 
 
 if __name__ == '__main__':
