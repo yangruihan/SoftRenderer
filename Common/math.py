@@ -1,4 +1,8 @@
-from math import sin, cos, acos, degrees, sqrt
+from math import sin, cos, acos, degrees, sqrt, atan2, asin
+
+
+def clamp(value, left, right):
+    return max(left, min(value, right))
 
 
 class Vector2:
@@ -272,7 +276,7 @@ class Quaternion:
         return q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w
 
     @staticmethod
-    def euler_angle(yaw, pitch, roll):
+    def from_euler_angle(yaw, pitch, roll):
         return Quaternion(yaw, pitch, roll)
 
     @staticmethod
@@ -384,7 +388,19 @@ class Quaternion:
 
     def __mul__(self, other):
         if isinstance(other, Quaternion):
-            pass
+            w1 = self.w
+            w2 = other.w
+            v1 = Vector3(self.x, self.y, self.z)
+            v2 = Vector3(self.x, self.y, self.z)
+            w3 = w1 * w2 - Vector3.dot(v1, v2)
+            v3 = Vector3.cross(v1, v2) + v2 * w1 + v1 * w2
+            return Quaternion(v3.x, v3.y, v3.z, w3)
+        elif isinstance(other, Vector3):
+            u = Vector3(self.x, self.y, self.z)
+            s = self.w
+            return Vector3.dot(u, other) * u * 2 \
+                   + other * (s * s - Vector3.dot(u, u)) \
+                   + Vector3.cross(u, other) * 2 * s
         else:
             try:
                 s = float(other)
@@ -401,6 +417,12 @@ class Quaternion:
     def inverse(self):
         return Quaternion(-self.x, -self.y, -self.z, self.w)
 
+    def euler_angle(self):
+        yaw = atan2(2 * (self.w * self.x + self.z * self.y), 1 - 2 * (self.x * self.x + self.y * self.y))
+        pitch = asin(clamp(2 * (self.w * self.y - self.x * self.z), -1.0, 1.0))
+        roll = atan2(2 * (self.w * self.z + self.x * self.y), 1 - 2 * (self.z * self.z + self.y * self.y))
+        return Vector3(degrees(yaw), degrees(pitch), degrees(roll))
+
     @property
     def x(self):
         return self._x
@@ -416,3 +438,7 @@ class Quaternion:
     @property
     def w(self):
         return self._w
+
+
+if __name__ == '__main__':
+    pass
