@@ -4,7 +4,7 @@
 from numpy import *
 
 import common_utils as cu
-from Common.math import *
+from common.math.vector import *
 
 
 class RendererContext:
