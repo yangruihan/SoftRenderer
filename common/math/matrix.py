@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 
-from common.math.vector import Vector2, Vector3
+from common.math.vector import Vector2, Vector3, Vector4
 
 EPSILON = 0.00001
 
@@ -302,6 +302,159 @@ class Matrix3x3:
 
 
 class Matrix4x4:
+    ELEMENT_COUNT = 16
+    ROW_COUNT = 4
+    COL_COUNT = 4
 
     def __init__(self, *args):
-        pass
+        self._element = [0] * self.ELEMENT_COUNT
+        self.set(*args)
+
+    def __str__(self):
+        return "Matrix4x4[[%s, %s, %s, %s], [%s, %s, %s, %s], [%s, %s, %s, %s], [%s, %s, %s, %s]]" % \
+               (self[0], self[1], self[2], self[3],
+                self[4], self[5], self[6], self[7],
+                self[8], self[9], self[10], self[11],
+                self[12], self[13], self[14], self[15])
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self._element[item]
+
+    def __add__(self, other):
+        if isinstance(other, Matrix4x4):
+            return Matrix4x4(self[0] + other[0], self[1] + other[1], self[2] + other[2], self[3] + other[3],
+                             self[4] + other[4], self[5] + other[5], self[6] + other[6], self[7] + other[7],
+                             self[8] + other[8], self[9] + other[9], self[10] + other[10], self[11] + other[11],
+                             self[12] + other[12], self[13] + other[13], self[14] + other[14], self[15] + other[15])
+
+    def __sub__(self, other):
+        if isinstance(other, Matrix4x4):
+            return Matrix4x4(self[0] - other[0], self[1] - other[1], self[2] - other[2], self[3] - other[3],
+                             self[4] - other[4], self[5] - other[5], self[6] - other[6], self[7] - other[7],
+                             self[8] - other[8], self[9] - other[9], self[10] - other[10], self[11] - other[11],
+                             self[12] - other[12], self[13] - other[13], self[14] - other[14], self[15] - other[15])
+
+    def __mul__(self, other):
+        if isinstance(other, Matrix4x4):
+            ret = [0] * self.ELEMENT_COUNT
+            for row in range(self.ROW_COUNT):
+                for col in range(self.COL_COUNT):
+                    sum_value = 0
+                    for i in range(self.ROW_COUNT):
+                        sum_value += self.get(i, row) * other.get(col, i)
+                    ret[col + row * self.COL_COUNT] = sum_value
+            return Matrix4x4(ret)
+        elif isinstance(other, Vector4):
+            return Vector4(self[0] * other.x + self[1] * other.y + self[2] * other.z + self[3] * other.w,
+                           self[4] * other.x + self[5] * other.y + self[6] * other.z + self[7] * other.w,
+                           self[8] * other.x + self[9] * other.y + self[10] * other.z + self[11] * other.w,
+                           self[12] * other.x + self[13] * other.y + self[14] * other.z + self[15] * other.w, )
+        else:
+            try:
+                s = float(other)
+                self._element = [x * s for x in self._element]
+            except ValueError:
+                raise AttributeError
+
+    def __eq__(self, other):
+        if isinstance(other, Matrix4x4):
+            for i in range(self.ELEMENT_COUNT):
+                if self[i] != other._element[i]:
+                    return False
+            return True
+        else:
+            return False
+
+    def set(self, *args):
+        args_len = len(args)
+        if args_len == 0:
+            pass
+        elif args_len == 1:
+            if isinstance(args[0], list) or isinstance(args[0], tuple):
+                self._element = [_ for _ in args[0]]
+            else:
+                self._element = [0] * self.ELEMENT_COUNT
+                for i in range(self.ROW_COUNT):
+                    self._element[i + i * self.COL_COUNT] = args[0]
+        elif args_len == 4 \
+                and isinstance(args[0], Vector4) \
+                and isinstance(args[1], Vector4) \
+                and isinstance(args[2], Vector4) \
+                and isinstance(args[3], Vector4):
+            self._element = [args[0].x, args[0].y, args[0].z, args[0].w,
+                             args[1].x, args[1].y, args[1].z, args[1].w,
+                             args[2].x, args[2].y, args[2].z, args[2].w,
+                             args[3].x, args[3].y, args[3].z, args[3].w]
+        elif args_len == 16:
+            self._element = list(args)
+        else:
+            raise AttributeError
+
+    def get(self, x, y):
+        if x + y * self.COL_COUNT < self.ELEMENT_COUNT:
+            return self[x + y * self.COL_COUNT]
+
+    def set_row(self, index, values):
+        for i in range(self.COL_COUNT):
+            self._element[i + index * self.COL_COUNT] = values[i]
+
+    def set_col(self, index, values):
+        for i in range(self.ROW_COUNT):
+            self._element[index + i * self.COL_COUNT] = values[i]
+
+    def get_row(self, index):
+        ret = []
+        for i in range(self.COL_COUNT):
+            ret.append(self[i + index * self.COL_COUNT])
+        return ret
+
+    def get_col(self, index):
+        ret = []
+        for i in range(self.ROW_COUNT):
+            ret.append(self[index + i * self.COL_COUNT])
+        return ret
+
+    def transpose(self):
+        """
+        转置矩阵
+        """
+        (self._element[1], self._element[4]) = (self._element[4], self._element[1])
+        (self._element[2], self._element[8]) = (self._element[8], self._element[2])
+        (self._element[3], self._element[12]) = (self._element[12], self._element[3])
+        (self._element[6], self._element[9]) = (self._element[9], self._element[6])
+        (self._element[7], self._element[13]) = (self._element[13], self._element[7])
+        (self._element[11], self._element[14]) = (self._element[14], self._element[11])
+        return self
+
+    def determinant(self):
+        """
+        行列式
+        """
+        return self[0] * Matrix4x4._get_co_factor(self[5], self[6], self[7], self[9], self[10],
+                                                  self[11], self[13], self[14], self[15]) - \
+               self[1] * Matrix4x4._get_co_factor(self[4], self[6], self[7], self[8], self[10],
+                                                  self[11], self[12], self[14], self[15]) + \
+               self[2] * Matrix4x4._get_co_factor(self[4], self[5], self[7], self[8], self[9],
+                                                  self[11], self[12], self[13], self[15]) - \
+               self[3] * Matrix4x4._get_co_factor(self[4], self[5], self[6], self[8], self[9],
+                                                  self[10], self[12], self[13], self[14])
+
+    @staticmethod
+    def _get_co_factor(m0, m1, m2, m3, m4, m5, m6, m7, m8):
+        return m0 * (m4 * m8 - m5 * m7) - m1 * (m3 * m8 - m5 * m6) + m2 * (m3 * m7 - m4 * m6)
+
+    def invert(self):
+        """
+        逆矩阵
+        """
+        if self[3] == 0 and self[7] == 0 and self[11] == 0 and self[15] == 1:
+            pass
+        else:
+            pass
+
+        return self
+
+    @classmethod
+    def identity(cls):
+        return Matrix4x4(1)
