@@ -2,6 +2,7 @@
 
 
 from math import acos, degrees, sqrt
+from common.math.matrix import *
 
 
 class Vector2:
@@ -176,6 +177,8 @@ class Vector3:
                        self.z - other.z)
 
     def __mul__(self, other):
+        if isinstance(other, Matrix4x4):
+            pass
         try:
             s = float(other)
             return Vector3(self.x * s,
