@@ -184,8 +184,3 @@ def _fill_top_flat_triangle(rc, v1, v2, v3, color):
         draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
         cx1 += inv_slope1
         cx2 += inv_slope2
-
-
-if __name__ == '__main__':
-    draw_triangle(None, ct.Vector2(0, 5), ct.Vector2(0, 200), ct.Vector2(0, 8), None)
-    pass

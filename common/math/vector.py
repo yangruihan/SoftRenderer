@@ -374,7 +374,3 @@ class Vector4:
         if cls._Zero is None:
             cls._Zero = Vector4(0)
         return cls._Zero
-
-
-if __name__ == '__main__':
-    pass
