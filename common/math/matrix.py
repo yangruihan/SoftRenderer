@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 
-from common.math.vector import *
+from common.math.vector import Vector2
 
 EPSILON = 0.00001
 
@@ -91,11 +91,25 @@ class Matrix2x2:
         if x + y * 2 < self.ELEMENT_COUNT:
             return self._element[x + y * 2]
 
-    def set_row(self, index, *args):
-        pass
+    def set_row(self, index, values):
+        for i in range(self.COL_COUNT):
+            self._element[i + index * self.COL_COUNT] = values[i]
 
-    def set_col(self, index, *args):
-        pass
+    def set_col(self, index, values):
+        for i in range(self.ROW_COUNT):
+            self._element[index + i * self.COL_COUNT] = values[i]
+
+    def get_row(self, index):
+        ret = []
+        for i in range(self.COL_COUNT):
+            ret.append(self._element[i + index * self.COL_COUNT])
+        return ret
+
+    def get_col(self, index):
+        ret = []
+        for i in range(self.ROW_COUNT):
+            ret.append(self._element[index + i * self.COL_COUNT])
+        return ret
 
     def transpose(self):
         """
