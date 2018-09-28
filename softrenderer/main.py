@@ -4,8 +4,8 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
-from common_types import *
-from common_utils import *
+from softrenderer.common_types import *
+from softrenderer.common_utils import *
 
 WIDTH = 400
 HEIGHT = 400

@@ -3,8 +3,8 @@
 
 from numpy import *
 
-import common_utils as cu
-from common.math.vector import *
+from softrenderer import common_utils as cu
+from softrenderer.common.math.vector import Vector2
 
 
 class RendererContext:

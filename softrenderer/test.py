@@ -2,8 +2,8 @@
 
 
 import unittest
-from common.math.matrix import Matrix2x2, Matrix3x3
-from common.math.vector import Vector2, Vector3
+from softrenderer.common.math.matrix import Matrix2x2, Matrix3x3
+from softrenderer.common.math.vector import Vector2, Vector3
 
 
 class TestMatrix2x2Methods(unittest.TestCase):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-import common_types as ct
+from softrenderer import common_types as ct
 
 
 def rgb2hex(r, g, b, a):
