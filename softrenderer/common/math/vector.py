@@ -2,7 +2,7 @@
 
 
 from math import acos, degrees, sqrt
-from softrenderer.common.math.matrix import *
+from softrenderer.common.math import matrix
 
 
 class Vector2:
@@ -13,7 +13,10 @@ class Vector2:
         if args_len == 0:
             (self.x, self.y) = Vector2.zero()
         elif args_len == 1:
-            (self.x, self.y) = [args[0]] * 2
+            if isinstance(args[0], Vector2):
+                (self.x, self.y) = (args[0].x, args[0].y)
+            else:
+                (self.x, self.y) = [args[0]] * 2
         elif args_len == 2:
             (self.x, self.y) = args
         else:
@@ -67,6 +70,11 @@ class Vector2:
                            self.y / s)
         except Exception:
             raise TypeError
+
+    def __eq__(self, other):
+        if not isinstance(other, Vector2):
+            return False
+        return self.x == other.x and self.y == other.y
 
     @staticmethod
     def angle(from_v, to_v):
@@ -134,7 +142,10 @@ class Vector3:
         if args_len == 0:
             (self.x, self.y, self.z) = Vector3.zero()
         elif args_len == 1:
-            (self.x, self.y, self.z) = [args[0]] * 3
+            if isinstance(args[0], Vector3):
+                (self.x, self.y, self.z) = (args[0].x, args[0].y, args[0].z)
+            else:
+                (self.x, self.y, self.z) = [args[0]] * 3
         elif args_len == 2:
             if isinstance(args[0], Vector2):
                 (self.x, self.y, self.z) = (args[0].x, args[0].y, args[1])
@@ -147,6 +158,11 @@ class Vector3:
 
     def __str__(self):
         return 'Vector3(%s, %s, %s)' % (self.x, self.y, self.z)
+
+    def __eq__(self, other):
+        if not isinstance(other, Vector3):
+            return False
+        return self.x == other.x and self.y == other.y and self.z == other.z
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -185,7 +201,7 @@ class Vector3:
                        self.z - other.z)
 
     def __mul__(self, other):
-        if isinstance(other, Matrix4x4):
+        if isinstance(other, matrix.Matrix4x4):
             pass
         try:
             s = float(other)
@@ -316,7 +332,10 @@ class Vector4:
         if args_len == 0:
             (self.x, self.y, self.z, self.w) = Vector4.zero()
         elif args_len == 1:
-            (self.x, self.y, self.z, self.w) = [args[0]] * 4
+            if isinstance(args[0], Vector4):
+                (self.x, self.y, self.z, self.w) = (args[0].x, args[0].y, args[0].z, args[0].w)
+            else:
+                (self.x, self.y, self.z, self.w) = [args[0]] * 4
         elif args_len == 2:
             if isinstance(args[0], Vector3):
                 (self.x, self.y, self.z, self.w) = (args[0].x, args[0].y, args[0].z, args[1])
@@ -331,6 +350,11 @@ class Vector4:
 
     def __str__(self):
         return 'Vector4(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+
+    def __eq__(self, other):
+        if not isinstance(other, Vector4):
+            return False
+        return self.x == other.x and self.y == other.y and self.z == other.z and self.w == other.w
 
     def __getitem__(self, item):
         if isinstance(item, int):

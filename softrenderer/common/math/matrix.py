@@ -363,7 +363,7 @@ class Matrix4x4:
             try:
                 s = float(other)
                 self._element = [x * s for x in self._element]
-            except ValueError:
+            except ValueError or TypeError:
                 raise AttributeError
 
     def __eq__(self, other):

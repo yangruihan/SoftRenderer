@@ -12,14 +12,21 @@ class Quaternion:
     _Identity = None
 
     def __init__(self, *args):
-        if len(args) == 4:
+        args_len = len(args)
+        if args_len == 4:
             mag = sum([x * x for x in args])
             self._x = args[0] / mag
             self._y = args[1] / mag
             self._z = args[2] / mag
             self._w = args[3] / mag
-        elif len(args) == 3:
+        elif args_len == 3:
             self.set_euler_angle(*args)
+        elif args_len == 1 and isinstance(args[0], Quaternion):
+            other = args[0]
+            self._x = other.x
+            self._y = other.y
+            self._z = other.z
+            self._w = other.w
         else:
             raise AttributeError
 
@@ -130,6 +137,11 @@ class Quaternion:
     def __str__(self):
         return 'Quaternion(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
 
+    def __eq__(self, other):
+        if not isinstance(other, Quaternion):
+            return False
+        return self.x == other.x and self.y == other.y and self.z == other.z and self.w == other.w
+
     def __add__(self, other):
         if isinstance(other, Quaternion):
             self._x += other._x
@@ -153,7 +165,7 @@ class Quaternion:
             w1 = self.w
             w2 = other.w
             v1 = Vector3(self.x, self.y, self.z)
-            v2 = Vector3(self.x, self.y, self.z)
+            v2 = Vector3(other.x, other.y, other.z)
             w3 = w1 * w2 - Vector3.dot(v1, v2)
             v3 = Vector3.cross(v1, v2) + v2 * w1 + v1 * w2
             return Quaternion(v3.x, v3.y, v3.z, w3)
