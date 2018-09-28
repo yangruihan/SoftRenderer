@@ -120,6 +120,14 @@ class Vector2:
 
 class Vector3:
     _Zero = None
+    _One = None
+
+    _Up = None
+    _Down = None
+    _Forward = None
+    _Back = None
+    _Left = None
+    _Right = None
 
     def __init__(self, *args):
         args_len = len(args)
@@ -256,6 +264,48 @@ class Vector3:
         if cls._Zero is None:
             cls._Zero = Vector3(0)
         return cls._Zero
+
+    @classmethod
+    def one(cls):
+        if cls._One is None:
+            cls._One = Vector3(1)
+        return cls._One
+
+    @classmethod
+    def up(cls):
+        if cls._Up is None:
+            cls._Up = Vector3(0, 1, 0)
+        return cls._Up
+
+    @classmethod
+    def down(cls):
+        if cls._Down is None:
+            cls._Down = Vector3(0, -1, 0)
+        return cls._Down
+
+    @classmethod
+    def forward(cls):
+        if cls._Forward is None:
+            cls._Forward = Vector3(0, 0, 1)
+        return cls._Forward
+
+    @classmethod
+    def back(cls):
+        if cls._Back is None:
+            cls._Back = Vector3(0, 0, -1)
+        return cls._Back
+
+    @classmethod
+    def left(cls):
+        if cls._Left is None:
+            cls._Left = Vector3(-1, 0, 0)
+        return cls._Left
+
+    @classmethod
+    def right(cls):
+        if cls._Right is None:
+            cls._Right = Vector3(1, 0, 0)
+        return cls._Right
 
 
 class Vector4:

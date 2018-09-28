@@ -1,12 +1,15 @@
 # -*- coding:utf-8 -*-
 
 
-from math import sin, cos, atan2, asin
+from math import sin, cos, atan2, asin, acos, degrees, sqrt
 
 from softrenderer.common.math.common import clamp
+from softrenderer.common.math.vector import Vector3
+from softrenderer.common.math.matrix import Matrix4x4
 
 
 class Quaternion:
+    _Identity = None
 
     def __init__(self, *args):
         if len(args) == 4:
@@ -19,6 +22,9 @@ class Quaternion:
             self.set_euler_angle(*args)
         else:
             raise AttributeError
+
+    def euler_angle_str(self):
+        return str(self.euler_angle())
 
     @staticmethod
     def dot(q1, q2):
@@ -121,6 +127,9 @@ class Quaternion:
         else:
             raise AttributeError
 
+    def __str__(self):
+        return 'Quaternion(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+
     def __add__(self, other):
         if isinstance(other, Quaternion):
             self._x += other._x
@@ -176,6 +185,15 @@ class Quaternion:
         roll = atan2(2 * (self.w * self.z + self.x * self.y), 1 - 2 * (self.z * self.z + self.y * self.y))
         return Vector3(degrees(yaw), degrees(pitch), degrees(roll))
 
+    def get_rot_matrix(self):
+        n = 1 / sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
+        (xx, yy, zz, ww) = (self.x * n, self.y * n, self.z * n, self.w * n)
+        return Matrix4x4(1.0 - 2.0 * yy * yy - 2.0 * zz * zz, 2.0 * xx * yy - 2.0 * zz * ww,
+                         2.0 * xx * zz + 2.0 * yy * ww, 0.0, 2.0 * xx * yy + 2.0 * zz * ww,
+                         1.0 - 2.0 * xx * xx - 2.0 * zz * zz, 2.0 * yy * zz - 2.0 * xx * ww, 0.0,
+                         2.0 * xx * zz - 2.0 * yy * ww, 2.0 * yy * zz + 2.0 * xx * ww,
+                         1.0 - 2.0 * xx * xx - 2.0 * yy * yy, 0.0, 0.0, 0.0, 0.0, 1.0).transpose()
+
     @property
     def x(self):
         return self._x
@@ -191,3 +209,9 @@ class Quaternion:
     @property
     def w(self):
         return self._w
+
+    @classmethod
+    def identity(cls):
+        if cls._Identity is None:
+            cls._Identity = Quaternion(0, 0, 0, 1)
+        return cls._Identity
