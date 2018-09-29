@@ -5,7 +5,29 @@ from softrenderer.common.math.vector import Vector2
 from softrenderer.common.types import Color
 
 
-class Triangle:
+class Line2d:
+
+    def __init__(self, *args):
+        args_len = len(args)
+        if args_len == 2:
+            start = args[0]
+            end = args[1]
+        elif args_len == 4:
+            start = Vector2(args[0], args[1])
+            end = Vector2(args[2], args[3])
+        else:
+            raise AttributeError
+
+        self.start = start
+        self.end = end
+
+    def __str__(self):
+        return 'Line2d(start (%.5f, %.5f), end (%.5f, %.5f))' \
+               % (self.start.x, self.start.y, self.end.x, self.end.y)
+
+
+class Triangle2d:
+
     def __init__(self, *args):
         args_len = len(args)
         # vector1, vector2, vector3, color
@@ -34,7 +56,8 @@ class Triangle:
             raise AttributeError
 
     def __str__(self):
-        return 'Triangle(v1(p: %.5f, %.5f | c: %.5f, %.5f, %.5f, %.5f), ' \
+        return 'Triangle2d(' \
+               'v1(p: %.5f, %.5f | c: %.5f, %.5f, %.5f, %.5f), ' \
                'v2(p: %.5f, %.5f | c: %.5f, %.5f, %.5f, %.5f), ' \
                'v3(p: %.5f, %.5f| c: %.5f, %.5f, %.5f, %.5f))' \
                % (self._v1.x, self._v1.y, self._c1.r, self._c1.g, self._c1.b, self._c1.a,
@@ -57,6 +80,10 @@ class Triangle:
 
         b1, b2, b3 = self.get_barycentrix(v)
         return self.c1 * b1 + self.c2 * b2 + self.c3 * b3
+
+    def get_sorted_vector_by_y(self):
+        ret = [(self.v1, self.c1), (self.v2, self.c2), (self.v3, self.c3)]
+        return sorted(ret, key=lambda x: x[0].y)
 
     @property
     def v1(self):

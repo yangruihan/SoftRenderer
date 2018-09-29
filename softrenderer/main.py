@@ -6,6 +6,7 @@ from OpenGL.GLUT import *
 
 from softrenderer.common.types import *
 from softrenderer.common.utils import *
+from softrenderer.common.primitive import Triangle2d
 
 WIDTH = 400
 HEIGHT = 400
@@ -27,8 +28,19 @@ def draw_func():
     # draw_line(rc, Line2d(800, 800, 900, 600), Color.White())
     # draw_line(rc, Line2d(300, 200, 500, 800), Color(255, 255, 0, 255))
 
-    draw_triangle(rc, Vector2(200, 100), Vector2(100, 300), Vector2(300, 300), Color.blue())
-    draw_triangle(rc, Vector2(200, 300), Vector2(100, 100), Vector2(300, 100), Color.red())
+    # draw_triangle(rc, Triangle2d(Vector2(200, 100),
+    #                              Vector2(100, 300),
+    #                              Vector2(300, 300),
+    #                              Color.red(),
+    #                              Color.green(),
+    #                              Color.blue()))
+
+    draw_triangle(rc, Triangle2d(Vector2(200, 300),
+                                 Vector2(100, 100),
+                                 Vector2(300, 100),
+                                 Color.red(),
+                                 Color.green(),
+                                 Color.blue()))
 
     glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels.transpose()).data)
     glFlush()

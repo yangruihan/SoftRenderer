@@ -2,6 +2,8 @@
 
 
 from softrenderer.common import types as ct
+from softrenderer.common import primitive as cp
+from softrenderer.common.math.vector import Vector2
 
 
 def rgb2hex(r, g, b, a):
@@ -18,11 +20,11 @@ def draw_pixel(rc, x, y, color):
     rc.set_pixel(x, y, color)
 
 
-def draw_line(rc, line, color):
-    print('[Log]Draw Line Call: (line: %s, color: %s)' % (line, color))
+def draw_line(rc, line, color1, color2):
+    print('[Log]Draw Line Call: (line: %s, color1: %s, color2: %s)' % (line, color1, color2))
 
-    (ret, line) = _cohen_sutherland_line_clip(line, ct.Vector2.zero(),
-                                              ct.Vector2(rc.width, rc.height))
+    (ret, line) = _cohen_sutherland_line_clip(line, Vector2.zero(),
+                                              Vector2(rc.width, rc.height))
 
     if not ret:
         print('[Log]Line was aborted')
@@ -35,16 +37,26 @@ def draw_line(rc, line, color):
 
     # draw a pixel
     if x1 == x2 and y1 == y2:
-        draw_pixel(rc, x1, y1, color)
+        draw_pixel(rc, x1, y1, color1)
     # draw a vertical line
     elif x1 == x2:
         inc = 1 if y1 <= y2 else -1
+        t = y2 - y1
         for y in range(y1, y2 + inc, inc):
+            if color1 == color2:
+                color = color1
+            else:
+                color = color1 * (y2 - y) / t + color2 * (y - y1) / t
             draw_pixel(rc, x1, y, color)
     # draw a horizontal line
     elif y1 == y2:
         inc = 1 if x1 <= x2 else -1
+        t = x2 - x1
         for x in range(x1, x2 + inc, inc):
+            if color1 == color2:
+                color = color1
+            else:
+                color = color1 * (x2 - x) / t + color2 * (x - x1) / t
             draw_pixel(rc, x, y1, color)
     else:
         dx = x2 - x1 if x1 < x2 else x1 - x2
@@ -57,13 +69,18 @@ def draw_line(rc, line, color):
 
             y = y1
             rem = 0
+            t = x2 - x1
             for x in range(x1, x2 + 1):
+                if color1 == color2:
+                    color = color1
+                else:
+                    color = color1 * (x2 - x) / t + color2 * (x - x1) / t
                 draw_pixel(rc, x, y, color)
                 rem += dy
                 if rem >= dx:
                     rem -= dx
                     y += 1 if y2 >= y1 else -1
-            draw_pixel(rc, x2, y2, color)
+            draw_pixel(rc, x2, y2, color2)
         else:
             if y2 < y1:
                 x1, x2 = x2, x1
@@ -71,13 +88,18 @@ def draw_line(rc, line, color):
 
             x = x1
             rem = 0
+            t = x2 - x1
             for y in range(y1, y2 + 1):
+                if color1 == color2:
+                    color = color1
+                else:
+                    color = color1 * (x2 - x) / t + color2 * (x - x1) / t
                 draw_pixel(rc, x, y, color)
                 rem += dx
                 if rem >= dy:
                     rem -= dy
                     x += 1 if x2 >= x1 else -1
-            draw_pixel(rc, x2, y2, color)
+            draw_pixel(rc, x2, y2, color2)
 
 
 E_LEFT = 1
@@ -106,8 +128,8 @@ def _cohen_sutherland_line_clip(line, min_pos, max_pos):
     (x1, y1) = (line.start.x, line.start.y)
     (x2, y2) = (line.end.x, line.end.y)
 
-    code1 = encode(ct.Vector2(x1, y1), min_pos, max_pos)
-    code2 = encode(ct.Vector2(x2, y2), min_pos, max_pos)
+    code1 = encode(Vector2(x1, y1), min_pos, max_pos)
+    code2 = encode(Vector2(x2, y2), min_pos, max_pos)
 
     accept = False
 
@@ -137,50 +159,62 @@ def _cohen_sutherland_line_clip(line, min_pos, max_pos):
 
             if code == code1:
                 (x1, y1) = (int(x), int(y))
-                code1 = encode(ct.Vector2(x1, y1), min_pos, max_pos)
+                code1 = encode(Vector2(x1, y1), min_pos, max_pos)
             else:
                 (x2, y2) = (int(x), int(y))
-                code2 = encode(ct.Vector2(x2, y2), min_pos, max_pos)
+                code2 = encode(Vector2(x2, y2), min_pos, max_pos)
 
     if accept:
-        return True, ct.Line2d(x1, y1, x2, y2)
+        return True, cp.Line2d(x1, y1, x2, y2)
     else:
         return False, None
 
 
-def draw_triangle(rc, v1, v2, v3, color):
-    # sort three vertices by y-coordinate
-    (v1, v2, v3) = sorted([v1, v2, v3], key=lambda v: v.y)
+def draw_triangle(rc, triangle):
+    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+        raise TypeError
 
+    (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
     if v2.y == v3.y:
-        _fill_top_flat_triangle(rc, v1, v2, v3, color)
+        _fill_top_flat_triangle(rc, cp.Triangle2d(v1, v2, v3, c1, c2, c3))
     elif v2.y == v1.y:
-        _fill_bottom_flat_triangle(rc, v3, v1, v2, color)
+        _fill_bottom_flat_triangle(rc, cp.Triangle2d(v3, v1, v2, c3, c1, c2))
     else:
-        v4 = ct.Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
-        _fill_top_flat_triangle(rc, v1, v2, v4, color)
-        _fill_bottom_flat_triangle(rc, v3, v2, v4, color)
+        v4 = Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
+        c4 = triangle.get_pixel_color(v4)
+        _fill_top_flat_triangle(rc, cp.Triangle2d(v1, v2, v4, c1, c2, c4))
+        _fill_bottom_flat_triangle(rc, cp.Triangle2d(v3, v2, v4, c3, c2, c4))
 
 
-def _fill_bottom_flat_triangle(rc, v1, v2, v3, color):
-    inv_slope1 = (v2.x - v1.x) / (v2.y - v1.y)
-    inv_slope2 = (v3.x - v1.x) / (v3.y - v1.y)
+def _fill_bottom_flat_triangle(rc, triangle):
+    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+        raise TypeError
 
-    (cx1, cx2) = (v1.x, v1.x)
+    inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)
+    inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
 
-    for y in range(v1.y, v2.y - 1, -1):
-        draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
+    cx1, cx2 = triangle.v1.x, triangle.v1.x
+
+    for y in range(triangle.v1.y, triangle.v2.y - 1, -1):
+        x1, x2 = int(cx1), int(cx2)
+        c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+        draw_line(rc, cp.Line2d(int(cx1), y, int(cx2), y), c1, c2)
         cx1 += inv_slope1
         cx2 += inv_slope2
 
 
-def _fill_top_flat_triangle(rc, v1, v2, v3, color):
-    inv_slope1 = (v2.x - v1.x) / (v2.y - v1.y)
-    inv_slope2 = (v3.x - v1.x) / (v3.y - v1.y)
+def _fill_top_flat_triangle(rc, triangle):
+    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+        raise TypeError
 
-    (cx1, cx2) = (v1.x, v1.x)
+    inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)
+    inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
 
-    for y in range(v1.y, v2.y + 1):
-        draw_line(rc, ct.Line2d(int(cx1), y, int(cx2), y), color)
+    cx1, cx2 = triangle.v1.x, triangle.v1.x
+
+    for y in range(triangle.v1.y, triangle.v2.y + 1):
+        x1, x2 = int(cx1), int(cx2)
+        c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+        draw_line(rc, cp.Line2d(int(cx1), y, int(cx2), y), c1, c2)
         cx1 += inv_slope1
         cx2 += inv_slope2
