@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from softrenderer.common import types as ct
+from softrenderer.renderer.renderer_context import RendererContext
 from softrenderer.common import primitive as cp
 from softrenderer.common.math.vector import Vector2
 
@@ -173,7 +173,7 @@ def _cohen_sutherland_line_clip(line, min_pos, max_pos):
 
 
 def draw_triangle(rc, triangle):
-    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+    if not isinstance(rc, RendererContext) or not isinstance(triangle, cp.Triangle2d):
         raise TypeError
 
     (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
@@ -194,7 +194,7 @@ def draw_triangle(rc, triangle):
 
 
 def _fill_bottom_flat_triangle(rc, triangle):
-    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+    if not isinstance(rc, RendererContext) or not isinstance(triangle, cp.Triangle2d):
         raise TypeError
 
     inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)
@@ -211,7 +211,7 @@ def _fill_bottom_flat_triangle(rc, triangle):
 
 
 def _fill_top_flat_triangle(rc, triangle):
-    if not isinstance(rc, ct.RendererContext) or not isinstance(triangle, cp.Triangle2d):
+    if not isinstance(rc, RendererContext) or not isinstance(triangle, cp.Triangle2d):
         raise TypeError
 
     inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)

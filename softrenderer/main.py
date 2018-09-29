@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
+from numpy import *
 
+from softrenderer.renderer.renderer_context import RendererContext
 from softrenderer.common.types import *
 from softrenderer.common.utils import *
 from softrenderer.common.primitive import Triangle2d
