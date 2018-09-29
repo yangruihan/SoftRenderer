@@ -23,7 +23,7 @@ class Vector2:
             raise AttributeError
 
     def __str__(self):
-        return 'Vector2(%s, %s)' % (self.x, self.y)
+        return 'Vector2(%.5f, %.5f)' % (self.x, self.y)
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -157,7 +157,7 @@ class Vector3:
             raise AttributeError
 
     def __str__(self):
-        return 'Vector3(%s, %s, %s)' % (self.x, self.y, self.z)
+        return 'Vector3(%.5f, %.5f, %.5f)' % (self.x, self.y, self.z)
 
     def __eq__(self, other):
         if not isinstance(other, Vector3):
@@ -349,7 +349,7 @@ class Vector4:
             raise AttributeError
 
     def __str__(self):
-        return 'Vector4(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+        return 'Vector4(%.5f, %.5f, %.5f, %.5f)' % (self.x, self.y, self.z, self.w)
 
     def __eq__(self, other):
         if not isinstance(other, Vector4):

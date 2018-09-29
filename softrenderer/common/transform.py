@@ -38,7 +38,7 @@ class Transform:
 
     def __str__(self):
         euler_angle = self.rotation.euler_angle()
-        return 'Transform(Pos(%s, %s, %s), Rot(%s, %s, %s), Scale(%s, %s, %s))' % (
+        return 'Transform(Pos(%.5f, %.5f, %.5f), Rot(%.5f, %.5f, %.5f), Scale(%.5f, %.5f, %.5f))' % (
             self.position.x, self.position.y, self.position.z,
             euler_angle.x, euler_angle.y, euler_angle.z,
             self.scale.x, self.scale.y, self.scale.z

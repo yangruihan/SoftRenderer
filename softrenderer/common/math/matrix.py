@@ -17,10 +17,10 @@ class Matrix2x2:
         self.set(*args)
 
     def __str__(self):
-        return "Matrix2x2[[%s, %s], [%s, %s]]" % (self[0],
-                                                  self[1],
-                                                  self[2],
-                                                  self[3])
+        return "Matrix2x2[[%.5f, %.5f], [%.5f, %.5f]]" % (self[0],
+                                                          self[1],
+                                                          self[2],
+                                                          self[3])
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -161,7 +161,7 @@ class Matrix3x3:
         self.set(*args)
 
     def __str__(self):
-        return "Matrix3x3[[%s, %s, %s], [%s, %s, %s], [%s, %s, %s]]" % \
+        return "Matrix3x3[[%.5f, %.5f, %.5f], [%.5f, %.5f, %.5f], [%.5f, %.5f, %.5f]]" % \
                (self[0], self[1], self[2],
                 self[3], self[4], self[5],
                 self[6], self[7], self[8])
@@ -320,7 +320,7 @@ class Matrix4x4:
         self.set(*args)
 
     def __str__(self):
-        return "Matrix4x4[[%s, %s, %s, %s], [%s, %s, %s, %s], [%s, %s, %s, %s], [%s, %s, %s, %s]]" % \
+        return "Matrix4x4[[%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f]]" % \
                (self[0], self[1], self[2], self[3],
                 self[4], self[5], self[6], self[7],
                 self[8], self[9], self[10], self[11],

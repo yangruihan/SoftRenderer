@@ -135,7 +135,7 @@ class Quaternion:
             raise AttributeError
 
     def __str__(self):
-        return 'Quaternion(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+        return 'Quaternion(%.5f, %.5f, %.5f, %.5f)' % (self.x, self.y, self.z, self.w)
 
     def __eq__(self, other):
         if not isinstance(other, Quaternion):

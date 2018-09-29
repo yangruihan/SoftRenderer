@@ -50,7 +50,7 @@ class Color:
         self.a = a
 
     def __str__(self):
-        return 'Color(%s, %s, %s, %s)' % (self.r, self.g, self.b, self.a)
+        return 'Color(%.5f, %.5f, %.5f, %.5f)' % (self.r, self.g, self.b, self.a)
 
     @classmethod
     def red(cls):
@@ -106,5 +106,5 @@ class Line2d:
         self.end = end
 
     def __str__(self):
-        return 'Line2d(start (%s, %s), end (%s, %s))' \
+        return 'Line2d(start (%.5f, %.5f), end (%.5f, %.5f))' \
                % (self.start.x, self.start.y, self.end.x, self.end.y)
