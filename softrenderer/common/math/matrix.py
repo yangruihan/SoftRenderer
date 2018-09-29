@@ -320,7 +320,11 @@ class Matrix4x4:
         self.set(*args)
 
     def __str__(self):
-        return "Matrix4x4[[%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f], [%.5f, %.5f, %.5f, %.5f]]" % \
+        return "Matrix4x4[" \
+               "[%.5f, %.5f, %.5f, %.5f], " \
+               "[%.5f, %.5f, %.5f, %.5f], " \
+               "[%.5f, %.5f, %.5f, %.5f], " \
+               "[%.5f, %.5f, %.5f, %.5f]]" % \
                (self[0], self[1], self[2], self[3],
                 self[4], self[5], self[6], self[7],
                 self[8], self[9], self[10], self[11],
@@ -359,6 +363,9 @@ class Matrix4x4:
                            self[4] * other.x + self[5] * other.y + self[6] * other.z + self[7] * other.w,
                            self[8] * other.x + self[9] * other.y + self[10] * other.z + self[11] * other.w,
                            self[12] * other.x + self[13] * other.y + self[14] * other.z + self[15] * other.w, )
+        elif isinstance(other, Vector3):
+            ret = self.__mul__(Vector4(other, 1))
+            return Vector3(ret.x, ret.y, ret.z)
         else:
             try:
                 s = float(other)

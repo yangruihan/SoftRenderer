@@ -7,6 +7,8 @@ from OpenGL.GLUT import *
 from softrenderer.common.types import *
 from softrenderer.common.utils import *
 from softrenderer.common.primitive import Triangle2d
+from softrenderer.common.transform import Transform
+from softrenderer.common.math.vector import Vector2, Vector3
 
 WIDTH = 400
 HEIGHT = 400
@@ -35,9 +37,16 @@ def draw_func():
     #                              Color.green(),
     #                              Color.blue()))
 
-    draw_triangle(rc, Triangle2d(Vector2(200, 300),
-                                 Vector2(100, 100),
-                                 Vector2(300, 100),
+    v1, v2, v3 = Vector3(200, 300, 0), Vector3(100, 100, 0), Vector3(300, 100, 0)
+    tf = Transform()
+    # tf.translate(Vector3.right() * 200)
+    tf.rotate_axis(Vector3.forward(), 15)
+    world_mat = tf.get_local_to_world_matrix()
+    v1, v2, v3 = world_mat * v1, world_mat * v2, world_mat * v3
+
+    draw_triangle(rc, Triangle2d(Vector2(v1.x, v1.y),
+                                 Vector2(v2.x, v2.y),
+                                 Vector2(v3.x, v3.y),
                                  Color.red(),
                                  Color.green(),
                                  Color.blue()))

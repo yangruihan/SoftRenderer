@@ -89,6 +89,9 @@ class Color:
         except Exception:
             raise TypeError
 
+    def is_valid(self):
+        return self.r >= 0 and self.g >= 0 and self.b >= 0 and self.a >= 0
+
     @classmethod
     def red(cls):
         if cls._Red is None:

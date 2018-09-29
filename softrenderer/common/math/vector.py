@@ -119,6 +119,13 @@ class Vector2:
         self.x *= tmp
         self.y *= tmp
 
+    def rasterizated(self):
+        return Vector2(int(self.x), int(self.y))
+
+    def rasterization(self):
+        self.x = int(self.x)
+        self.y = int(self.y)
+
     @classmethod
     def zero(cls):
         if cls._Zero is None:
@@ -274,6 +281,14 @@ class Vector3:
         self.x *= tmp
         self.y *= tmp
         self.z *= tmp
+
+    def rasterizated(self):
+        return Vector3(int(self.x), int(self.y), int(self.z))
+
+    def rasterization(self):
+        self.x = int(self.x)
+        self.y = int(self.y)
+        self.z = int(self.z)
 
     @classmethod
     def zero(cls):
@@ -445,6 +460,15 @@ class Vector4:
         self.y *= tmp
         self.z *= tmp
         self.w *= tmp
+
+    def rasterizated(self):
+        return Vector4(int(self.x), int(self.y), int(self.z), int(self.w))
+
+    def rasterization(self):
+        self.x = int(self.x)
+        self.y = int(self.y)
+        self.z = int(self.z)
+        self.w = int(self.w)
 
     @classmethod
     def zero(cls):

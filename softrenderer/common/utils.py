@@ -17,7 +17,8 @@ def rgb2hex_str(r, g, b, a):
 # ---- draw -----
 
 def draw_pixel(rc, x, y, color):
-    rc.set_pixel(x, y, color)
+    if color.is_valid():
+        rc.set_pixel(x, y, color)
 
 
 def draw_line(rc, line, color1, color2):
@@ -48,6 +49,7 @@ def draw_line(rc, line, color1, color2):
             else:
                 color = color1 * (y2 - y) / t + color2 * (y - y1) / t
             draw_pixel(rc, x1, y, color)
+
     # draw a horizontal line
     elif y1 == y2:
         inc = 1 if x1 <= x2 else -1
@@ -175,12 +177,17 @@ def draw_triangle(rc, triangle):
         raise TypeError
 
     (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
+    v1.rasterization()
+    v2.rasterization()
+    v3.rasterization()
+
     if v2.y == v3.y:
         _fill_top_flat_triangle(rc, cp.Triangle2d(v1, v2, v3, c1, c2, c3))
     elif v2.y == v1.y:
         _fill_bottom_flat_triangle(rc, cp.Triangle2d(v3, v1, v2, c3, c1, c2))
     else:
         v4 = Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
+        v4.rasterization()
         c4 = triangle.get_pixel_color(v4)
         _fill_top_flat_triangle(rc, cp.Triangle2d(v1, v2, v4, c1, c2, c4))
         _fill_bottom_flat_triangle(rc, cp.Triangle2d(v3, v2, v4, c3, c2, c4))
@@ -199,8 +206,8 @@ def _fill_bottom_flat_triangle(rc, triangle):
         x1, x2 = int(cx1), int(cx2)
         c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
         draw_line(rc, cp.Line2d(int(cx1), y, int(cx2), y), c1, c2)
-        cx1 += inv_slope1
-        cx2 += inv_slope2
+        cx1 -= inv_slope1
+        cx2 -= inv_slope2
 
 
 def _fill_top_flat_triangle(rc, triangle):
