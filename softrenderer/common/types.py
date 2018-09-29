@@ -3,7 +3,7 @@
 
 from numpy import *
 
-from softrenderer import common_utils as cu
+from softrenderer.common import utils as cu
 from softrenderer.common.math.vector import Vector2
 
 
@@ -51,6 +51,44 @@ class Color:
 
     def __str__(self):
         return 'Color(%.5f, %.5f, %.5f, %.5f)' % (self.r, self.g, self.b, self.a)
+
+    def __add__(self, other):
+        if not isinstance(other, Color):
+            raise TypeError
+
+        return Color(self.r + other.r,
+                     self.g + other.g,
+                     self.b + other.b,
+                     self.a + other.a)
+
+    def __sub__(self, other):
+        if not isinstance(other, Color):
+            raise TypeError
+
+        return Color(self.r - other.r,
+                     self.g - other.g,
+                     self.b - other.b,
+                     self.a - other.a)
+
+    def __mul__(self, other):
+        try:
+            s = float(other)
+            return Color(self.r * s,
+                         self.g * s,
+                         self.b * s,
+                         self.a * s)
+        except Exception:
+            raise TypeError
+
+    def __truediv__(self, other):
+        try:
+            s = float(other)
+            return Color(self.r / s,
+                         self.g / s,
+                         self.b / s,
+                         self.a / s)
+        except Exception:
+            raise TypeError
 
     @classmethod
     def red(cls):

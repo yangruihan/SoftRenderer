@@ -2,7 +2,7 @@
 
 
 from softrenderer.common.math.vector import Vector2
-from softrenderer.common_types import Color
+from softrenderer.common.types import Color
 
 
 class Triangle:
@@ -50,6 +50,13 @@ class Triangle:
         b2 = ((v.y - self.v1.y) * (self.v3.x - self.v1.x) + (self.v3.y - self.v1.y) * (self.v1.x - v.x)) / t
         b3 = ((v.y - self.v2.y) * (self.v1.x - self.v2.x) + (self.v1.y - self.v2.y) * (self.v2.x - v.x)) / t
         return b1, b2, b3
+
+    def get_pixel_color(self, v):
+        if not isinstance(v, Vector2):
+            raise TypeError
+
+        b1, b2, b3 = self.get_barycentrix(v)
+        return self.c1 * b1 + self.c2 * b2 + self.c3 * b3
 
     @property
     def v1(self):
