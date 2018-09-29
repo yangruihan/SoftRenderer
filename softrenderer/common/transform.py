@@ -9,6 +9,7 @@ from softrenderer.common.math.matrix import Matrix4x4
 
 
 class Transform:
+
     def __init__(self, *args):
         self._is_dirty = True
 
@@ -46,10 +47,10 @@ class Transform:
 
     def get_local_to_world_matrix(self):
         if self._is_dirty:
-            trans_matrix = Matrix4x4(1, 0, 0, 0,
-                                     0, 1, 0, 0,
-                                     0, 0, 1, 0,
-                                     self.position.x, self.position.y, self.position.z, 1)
+            trans_matrix = Matrix4x4(1, 0, 0, self.position.x,
+                                     0, 1, 0, self.position.y,
+                                     0, 0, 1, self.position.z,
+                                     0, 0, 0, 1)
 
             scale_matrix = Matrix4x4(self.scale.x, 0, 0, 0,
                                      0, self.scale.y, 0, 0,

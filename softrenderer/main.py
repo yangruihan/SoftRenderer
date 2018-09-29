@@ -37,10 +37,11 @@ def draw_func():
     #                              Color.green(),
     #                              Color.blue()))
 
-    v1, v2, v3 = Vector3(200, 300, 0), Vector3(100, 100, 0), Vector3(300, 100, 0)
+    v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -100, 0), Vector3(100, -100, 0)
     tf = Transform()
-    # tf.translate(Vector3.right() * 200)
-    tf.rotate_axis(Vector3.forward(), 15)
+    tf.translate(Vector3(200, 200, 0))
+    tf.rotate_axis(Vector3.forward(), 45)
+    tf.scale = Vector3(0.5, 0.5, 1)
     world_mat = tf.get_local_to_world_matrix()
     v1, v2, v3 = world_mat * v1, world_mat * v2, world_mat * v3
 
