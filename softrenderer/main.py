@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
+from numpy import *
 
-from softrenderer.common.types import *
-from softrenderer.common.utils import *
+from softrenderer.renderer.renderer_context import RendererContext
+from softrenderer.common.types import Color
 from softrenderer.common.primitive import Triangle2d
 from softrenderer.common.transform import Transform
 from softrenderer.common.math.vector import Vector2, Vector3
@@ -45,12 +47,12 @@ def draw_func():
     world_mat = tf.get_local_to_world_matrix()
     v1, v2, v3 = world_mat * v1, world_mat * v2, world_mat * v3
 
-    draw_triangle(rc, Triangle2d(Vector2(v1.x, v1.y),
-                                 Vector2(v2.x, v2.y),
-                                 Vector2(v3.x, v3.y),
-                                 Color.red(),
-                                 Color.green(),
-                                 Color.blue()))
+    rc.draw_triangle(Triangle2d(Vector2(v1.x, v1.y),
+                                Vector2(v2.x, v2.y),
+                                Vector2(v3.x, v3.y),
+                                Color.red(),
+                                Color.green(),
+                                Color.blue()))
 
     glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels.transpose()).data)
     glFlush()

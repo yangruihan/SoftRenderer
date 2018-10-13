@@ -2,6 +2,7 @@
 
 
 from . import math
+from . import mesh
 from . import primitive
 from . import transform
 from . import types
