@@ -14,6 +14,7 @@ class MeshRenderer(Renderer):
             raise TypeError
 
         self._mesh = Mesh
+        self._material = None
 
-    def render(self):
+    def draw(self):
         ...

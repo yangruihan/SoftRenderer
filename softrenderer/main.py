@@ -22,7 +22,7 @@ def draw_func():
     glClearColor(1, 1, 1, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    rc.clear_pixels()
+    rc.clear()
 
     # draw_line(rc, Line2d(0, 0, 600, 600), Color.Red())
     # draw_line(rc, Line2d(0, 400, 400, 0), Color.Blue())
@@ -54,7 +54,7 @@ def draw_func():
                                 Color.green(),
                                 Color.blue()))
 
-    glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.pixels.transpose()).data)
+    glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.color_buffer.transpose()).data)
     glFlush()
 
 

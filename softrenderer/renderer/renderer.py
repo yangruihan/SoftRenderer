@@ -12,5 +12,5 @@ class Renderer:
 
         self._rc = rc
 
-    def render(self):
+    def draw(self):
         pass

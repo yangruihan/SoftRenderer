@@ -3,8 +3,10 @@
 
 from numpy import *
 
-from softrenderer.common.math.vector import Vector2
+from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.primitive import Line2d, Triangle2d
+from softrenderer.renderer import renderer as rd
+from softrenderer.renderer.shader import VertexShader, PixelShader
 
 
 class RendererContext:
@@ -17,20 +19,80 @@ class RendererContext:
     def __init__(self, w, h):
         self._width = w
         self._height = h
-        self._pixels = zeros((w + 1, h + 1), dtype=uint32)
+        self._color_buffer = zeros((w + 1, h + 1), dtype=uint32)
+        self._vertex_shader = None
+        self._pixel_shader = None
 
-    def clear_pixels(self):
-        self._pixels.fill(0)
+    def clear(self):
+        self._clear_color_buffer()
 
-    def set_pixels(self, new_pixels):
-        self._pixels = new_pixels
+    def bind_vertex_shader(self, shader=None):
+        if shader is not None and not isinstance(shader, VertexShader):
+            raise TypeError
 
-    def set_pixel(self, x, y, color):
-        self._pixels[x, y] = color.hex()
+        self._vertex_shader = shader
+
+    def bind_pixel_shader(self, shader=None):
+        if shader is not None and not isinstance(shader, PixelShader):
+            raise TypeError
+
+        self._pixel_shader = shader
+
+    def draw(self, renderer):
+        if not isinstance(renderer, rd.Renderer):
+            raise TypeError
+
+        if self._vertex_shader is None:
+            print("[Render Error] vertex_shader is None")
+            return
+
+        if self._pixel_shader is None:
+            print("[Render Error] fragment_shader is None")
+            return
+
+        vertex_data_list = renderer.draw()
+
+        # geometry stage
+        vertex_data_list = self._geometry_stage(vertex_data_list)
+
+        # rasterizer stage
+        self._rasterizer_stage(vertex_data_list)
+
+    def _geometry_stage(self, vertex_data_list):
+        ret = []
+
+        # vertex shading
+        for vertex_data in vertex_data_list:
+            ret.append(self._vertex_shader.main(vertex_data))
+
+        # clipping
+        ...
+
+        # screen mapping
+        for i in range(len(ret)):
+            ndc = ret[i]['position']
+            screen_pos = Vector3((ndc.x + 1) * self.width / 2,
+                                 (ndc.y + 1) * self.height / 2,
+                                 ndc.z)
+            ret[i]['position'] = screen_pos
+
+        return ret
+
+    def _rasterizer_stage(self, vertex_data_list):
+        pass
+
+    def _clear_color_buffer(self):
+        self._color_buffer.fill(0)
+
+    def _set_pixels(self, new_pixels):
+        self._color_buffer = new_pixels
+
+    def _set_pixel(self, x, y, color):
+        self._color_buffer[x, y] = color.hex()
 
     def draw_pixel(self, x, y, color):
         if color.is_valid():
-            self.set_pixel(x, y, color)
+            self._set_pixel(x, y, color)
 
     def draw_line(self, line, color1, color2):
         print('[Log]Draw Line Call: (line: %s, color1: %s, color2: %s)' % (line,
@@ -237,5 +299,5 @@ class RendererContext:
         return self._height
 
     @property
-    def pixels(self):
-        return self._pixels
+    def color_buffer(self):
+        return self._color_buffer
