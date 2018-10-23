@@ -83,6 +83,14 @@ class Matrix2x2:
         elif args_len == 2 and isinstance(args[0], Vector2) and isinstance(args[1], Vector2):
             self._element = [args[0].x, args[0].y,
                              args[1].x, args[1].y]
+        elif args_len == 3 \
+                and isinstance(args[0], int) \
+                and isinstance(args[1], int) \
+                and isinstance(args[2], float):
+            if args[0] + args[1] * self.COL_COUNT < self.ELEMENT_COUNT:
+                self._element[args[0] + args[1] * self.COL_COUNT] = args[2]
+            else:
+                raise IndexError
         elif args_len == 4:
             self._element = [args[0], args[1], args[2], args[3]]
         else:
@@ -230,6 +238,14 @@ class Matrix3x3:
             self._element = [args[0].x, args[0].y, args[0].z,
                              args[1].x, args[1].y, args[1].z,
                              args[2].x, args[2].y, args[2].z]
+        elif args_len == 3 \
+                and isinstance(args[0], int) \
+                and isinstance(args[1], int) \
+                and isinstance(args[2], float):
+            if args[0] + args[1] * self.COL_COUNT < self.ELEMENT_COUNT:
+                self._element[args[0] + args[1] * self.COL_COUNT] = args[2]
+            else:
+                raise IndexError
         elif args_len == 9:
             self._element = list(args)
         else:
@@ -395,6 +411,14 @@ class Matrix4x4:
                 self._element = [0] * self.ELEMENT_COUNT
                 for i in range(self.ROW_COUNT):
                     self._element[i + i * self.COL_COUNT] = args[0]
+        elif args_len == 3 \
+                and isinstance(args[0], int) \
+                and isinstance(args[1], int) \
+                and isinstance(args[2], float):
+            if args[0] + args[1] * self.COL_COUNT < self.ELEMENT_COUNT:
+                self._element[args[0] + args[1] * self.COL_COUNT] = args[2]
+            else:
+                raise IndexError
         elif args_len == 4 \
                 and isinstance(args[0], Vector4) \
                 and isinstance(args[1], Vector4) \
@@ -774,6 +798,11 @@ class Matrix4x4:
         self._element[13] = m12 * s + m13 * c
 
         return self
+
+    def left_up(self):
+        return Matrix3x3(self[0], self[1], self[2],
+                         self[4], self[5], self[6],
+                         self[8], self[9], self[10])
 
     @classmethod
     def identity(cls):
