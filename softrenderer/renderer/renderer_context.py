@@ -1,8 +1,9 @@
 # -*- coding:utf-8 -*-
 
 
-from numpy import *
 import logging
+
+from numpy import *
 
 from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.primitive import Line2d, Triangle2d
@@ -118,24 +119,28 @@ class RendererContext:
         # draw a vertical line
         elif x1 == x2:
             inc = 1 if y1 <= y2 else -1
-            t = y2 - y1
+            t = 0 if y1 <= y2 else 1
+            t_span = 1 / (y2 - y1) * inc
             for y in range(y1, y2 + inc, inc):
                 if color1 == color2:
                     color = color1
                 else:
-                    color = color1 * (y2 - y) / t + color2 * (y - y1) / t
+                    color = color1 * (1 - t) + color2 * t
                 self.draw_pixel(x1, y, color)
+                t += t_span
 
         # draw a horizontal line
         elif y1 == y2:
             inc = 1 if x1 <= x2 else -1
-            t = x2 - x1
+            t = 0 if x1 <= x2 else 1
+            t_span = 1 / (x2 - x1) * inc
             for x in range(x1, x2 + inc, inc):
                 if color1 == color2:
                     color = color1
                 else:
-                    color = color1 * (x2 - x) / t + color2 * (x - x1) / t
+                    color = color1 * (1 - t) + color2 * t
                 self.draw_pixel(x, y1, color)
+                t += t_span
         else:
             dx = x2 - x1 if x1 < x2 else x1 - x2
             dy = y2 - y1 if y1 < y2 else y1 - y2
@@ -147,13 +152,15 @@ class RendererContext:
 
                 y = y1
                 rem = 0
-                t = x2 - x1
+                t = 0
+                t_span = 1 / (x2 - x1)
                 for x in range(x1, x2 + 1):
                     if color1 == color2:
                         color = color1
                     else:
-                        color = color1 * (x2 - x) / t + color2 * (x - x1) / t
+                        color = color1 * (1 - t) + color2 * t
                     self.draw_pixel(x, y, color)
+                    t += t_span
                     rem += dy
                     if rem >= dx:
                         rem -= dx
@@ -166,13 +173,15 @@ class RendererContext:
 
                 x = x1
                 rem = 0
-                t = x2 - x1
+                t = 0
+                t_span = 1 / (y2 - y1)
                 for y in range(y1, y2 + 1):
                     if color1 == color2:
                         color = color1
                     else:
-                        color = color1 * (x2 - x) / t + color2 * (x - x1) / t
+                        color = color1 * (1 - t) + color2 * t
                     self.draw_pixel(x, y, color)
+                    t += t_span
                     rem += dx
                     if rem >= dy:
                         rem -= dy
@@ -256,6 +265,7 @@ class RendererContext:
             v4 = Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
             v4.rasterization()
             c4 = triangle.get_pixel_color(v4)
+
             self._fill_top_flat_triangle(Triangle2d(v1, v2, v4, c1, c2, c4))
             self._fill_bottom_flat_triangle(Triangle2d(v3, v2, v4, c3, c2, c4))
 
@@ -267,13 +277,18 @@ class RendererContext:
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
+        rate_span = 1 / (triangle.v1.y - triangle.v3.y)
+        t = 0
 
         for y in range(triangle.v1.y, triangle.v2.y - 1, -1):
-            x1, x2 = int(cx1), int(cx2)
-            c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            # x1, x2 = int(cx1), int(cx2)
+            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            temp_c = triangle.c1 * (1 - t)
+            c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
             self.draw_line(Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 -= inv_slope1
             cx2 -= inv_slope2
+            t += rate_span
 
     def _fill_top_flat_triangle(self, triangle):
         if not isinstance(triangle, Triangle2d):
@@ -283,13 +298,18 @@ class RendererContext:
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
+        rate_span = 1 / (triangle.v3.y - triangle.v1.y)
+        t = 0
 
         for y in range(triangle.v1.y, triangle.v2.y + 1):
-            x1, x2 = int(cx1), int(cx2)
-            c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            # x1, x2 = int(cx1), int(cx2)
+            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            temp_c = triangle.c1 * (1 - t)
+            c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
             self.draw_line(Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 += inv_slope1
             cx2 += inv_slope2
+            t += rate_span
 
     @property
     def width(self):

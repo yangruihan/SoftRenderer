@@ -11,7 +11,7 @@ import time
 
 from softrenderer.renderer.renderer_context import RendererContext
 from softrenderer.common.types import Color
-from softrenderer.common.primitive import Triangle2d
+from softrenderer.common.primitive import Triangle2d, Line2d
 from softrenderer.common.transform import Transform
 from softrenderer.common.math.vector import Vector2, Vector3
 
@@ -36,20 +36,7 @@ def draw_func():
 
     rc.clear()
 
-    # draw_line(rc, Line2d(0, 0, 600, 600), Color.Red())
-    # draw_line(rc, Line2d(0, 400, 400, 0), Color.Blue())
-    # draw_line(rc, Line2d(0, 200, 400, 200), Color.Green())
-    # draw_line(rc, Line2d(200, 0, 200, 400), Color.White())
-    #
-    # draw_line(rc, Line2d(800, 800, 900, 600), Color.White())
-    # draw_line(rc, Line2d(300, 200, 500, 800), Color(255, 255, 0, 255))
-
-    # draw_triangle(rc, Triangle2d(Vector2(200, 100),
-    #                              Vector2(100, 300),
-    #                              Vector2(300, 300),
-    #                              Color.red(),
-    #                              Color.green(),
-    #                              Color.blue()))
+    # rc.draw_line(Line2d(Vector2(0, 0), Vector2(400, 300)), Color.red(), Color.blue())
 
     v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -100, 0), Vector3(100, -100, 0)
     tf = Transform()
