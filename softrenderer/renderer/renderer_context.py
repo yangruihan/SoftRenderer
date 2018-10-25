@@ -2,6 +2,7 @@
 
 
 from numpy import *
+import logging
 
 from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.primitive import Line2d, Triangle2d
@@ -43,11 +44,11 @@ class RendererContext:
             raise TypeError
 
         if self._vertex_shader is None:
-            print("[Render Error] vertex_shader is None")
+            logging.debug("[Render Error] vertex_shader is None")
             return
 
         if self._pixel_shader is None:
-            print("[Render Error] fragment_shader is None")
+            logging.debug("[Render Error] fragment_shader is None")
             return
 
         vertex_data_list = renderer.draw()
@@ -95,18 +96,18 @@ class RendererContext:
             self._set_pixel(x, y, color)
 
     def draw_line(self, line, color1, color2):
-        print('[Log]Draw Line Call: (line: %s, color1: %s, color2: %s)' % (line,
-                                                                           color1,
-                                                                           color2))
+        logging.debug('[Log]Draw Line Call: (line: %s, color1: %s, color2: %s)' % (line,
+                                                                                   color1,
+                                                                                   color2))
 
         (ret, line) = self._cohen_sutherland_line_clip(line, Vector2.zero(),
                                                        Vector2(self.width, self.height))
 
         if not ret:
-            print('[Log]Line was aborted')
+            logging.debug('[Log]Line was aborted')
             return
         else:
-            print('[Log]Will draw line %s' % line)
+            logging.debug('[Log]Will draw line %s' % line)
 
         (x1, y1) = (line.start.x, line.start.y)
         (x2, y2) = (line.end.x, line.end.y)

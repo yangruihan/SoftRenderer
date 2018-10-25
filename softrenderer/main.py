@@ -6,6 +6,9 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from numpy import *
 
+import logging
+import time
+
 from softrenderer.renderer.renderer_context import RendererContext
 from softrenderer.common.types import Color
 from softrenderer.common.primitive import Triangle2d
@@ -17,8 +20,17 @@ HEIGHT = 400
 
 rc = RendererContext(WIDTH, HEIGHT)
 
+pre_frame_time = 0
+
 
 def draw_func():
+    global pre_frame_time
+
+    now_time = time.time()
+    time_span = now_time - pre_frame_time
+    logging.info("Time span %f, fps %f", time_span, 1 / time_span)
+    pre_frame_time = now_time
+
     glClearColor(1, 1, 1, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
@@ -54,13 +66,26 @@ def draw_func():
                                 Color.green(),
                                 Color.blue()))
 
-    glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ascontiguousarray(rc.color_buffer.transpose()).data)
+    glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8,
+                 ascontiguousarray(rc.color_buffer.transpose()).data)
     glFlush()
 
 
-glutInit()
-glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
-glutInitWindowSize(400, 400)
-glutCreateWindow("Test")
-glutDisplayFunc(draw_func)
-glutMainLoop()
+def main():
+    global pre_frame_time
+
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    pre_frame_time = time.time()
+
+    glutInit()
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
+    glutInitWindowSize(400, 400)
+    glutCreateWindow("Test")
+    glutDisplayFunc(draw_func)
+    glutIdleFunc(draw_func)
+    glutMainLoop()
+
+
+if __name__ == '__main__':
+    main()
