@@ -21,14 +21,15 @@ HEIGHT = 400
 rc = RenderContext(WIDTH, HEIGHT)
 
 pre_frame_time = 0
+timer = 0
 
 
 def draw_func():
-    global pre_frame_time
+    global pre_frame_time, timer
 
     now_time = time.time()
-    time_span = now_time - pre_frame_time
-    logging.info("Time span %f, fps %f", time_span, 1 / time_span)
+    delta_time = now_time - pre_frame_time
+    logging.info("Time span %f, fps %f", delta_time, 1 / delta_time)
     pre_frame_time = now_time
 
     glClearColor(1, 1, 1, 0)
@@ -41,11 +42,13 @@ def draw_func():
     rc.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
                  Color.green(), Color.green())
 
+    timer += delta_time
+
     v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -
                                              100, 0), Vector3(100, -100, 0)
     tf = Transform()
     tf.translate(Vector3(200, 200, 0))
-    tf.rotate_axis(Vector3.forward(), 45)
+    tf.rotate_axis(Vector3.forward(), 45 * timer)
     tf.scale = Vector3(0.5, 0.5, 1)
     world_mat = tf.get_local_to_world_matrix()
     v1, v2, v3 = world_mat * v1, world_mat * v2, world_mat * v3

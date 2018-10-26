@@ -265,7 +265,8 @@ class RenderContext:
             v4 = Vector2(int(v1.x + (v2.y - v1.y) *
                              (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
             v4.rasterization()
-            c4 = triangle.get_pixel_color(v4)
+            b1, b2, b3 = Triangle2d(v1, v2, v3, c1, c2, c3).get_barycentrix(v4)
+            c4 = c1 * b1 + c2 * b2 + c3 * b3
 
             self._fill_top_flat_triangle(Triangle2d(v1, v2, v4, c1, c2, c4))
             self._fill_bottom_flat_triangle(Triangle2d(v3, v2, v4, c3, c2, c4))
@@ -278,6 +279,9 @@ class RenderContext:
             (triangle.v2.y - triangle.v1.y)
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
             (triangle.v3.y - triangle.v1.y)
+        if inv_slope1 < inv_slope2:
+            inv_slope1, inv_slope2 = inv_slope2, inv_slope1
+            triangle.c2, triangle.c3 = triangle.c3, triangle.c2
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
         rate_span = 1 / (triangle.v1.y - triangle.v3.y)
@@ -301,6 +305,9 @@ class RenderContext:
             (triangle.v2.y - triangle.v1.y)
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
             (triangle.v3.y - triangle.v1.y)
+        if inv_slope1 > inv_slope2:
+            inv_slope1, inv_slope2 = inv_slope2, inv_slope1
+            triangle.c2, triangle.c3 = triangle.c3, triangle.c2
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
         rate_span = 1 / (triangle.v3.y - triangle.v1.y)

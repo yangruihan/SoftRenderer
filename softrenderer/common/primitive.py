@@ -89,22 +89,65 @@ class Triangle2d:
     def v1(self):
         return self._v1
 
+    @v1.setter
+    def v1(self, v1):
+        if not isinstance(v1, Vector3):
+            raise TypeError
+
+        self._v1 = v1
+
     @property
     def v2(self):
         return self._v2
+
+    @v2.setter
+    def v2(self, v2):
+        if not isinstance(v2, Vector3):
+            raise TypeError
+
+        self._v2 = v2
 
     @property
     def v3(self):
         return self._v3
 
+    @v3.setter
+    def v3(self, v3):
+        if not isinstance(v3, Vector3):
+            raise TypeError
+
+        self._v3 = v3
+
     @property
     def c1(self):
         return self._c1
+
+    @c1.setter
+    def c1(self, c1):
+        if not isinstance(c1, Color):
+            raise TypeError
+
+        self._c1 = c1
 
     @property
     def c2(self):
         return self._c2
 
+    @c2.setter
+    def c2(self, c2):
+        if not isinstance(c2, Color):
+            raise TypeError
+
+        self._c2 = c2
+
     @property
     def c3(self):
         return self._c3
+
+    @c3.setter
+    def c3(self, c3):
+        if not isinstance(c3, Color):
+            raise TypeError
+
+        self._c3 = c3
+
