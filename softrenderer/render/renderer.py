@@ -1,13 +1,13 @@
 # -*- coding:utf-8 -*-
 
 
-from softrenderer.renderer.renderer_context import RendererContext
+from softrenderer.render.render_context import RenderContext
 
 
 class Renderer:
 
     def __init__(self, rc):
-        if not isinstance(rc, RendererContext):
+        if not isinstance(rc, RenderContext):
             raise TypeError
 
         self._rc = rc

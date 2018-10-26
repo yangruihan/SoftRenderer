@@ -9,7 +9,7 @@ from numpy import *
 import logging
 import time
 
-from softrenderer.renderer.renderer_context import RendererContext
+from softrenderer.render.render_context import RenderContext
 from softrenderer.common.types import Color
 from softrenderer.common.primitive import Triangle2d, Line2d
 from softrenderer.common.transform import Transform
@@ -18,7 +18,7 @@ from softrenderer.common.math.vector import Vector2, Vector3
 WIDTH = 400
 HEIGHT = 400
 
-rc = RendererContext(WIDTH, HEIGHT)
+rc = RenderContext(WIDTH, HEIGHT)
 
 pre_frame_time = 0
 
@@ -36,9 +36,13 @@ def draw_func():
 
     rc.clear()
 
-    # rc.draw_line(Line2d(Vector2(0, 0), Vector2(400, 300)), Color.red(), Color.blue())
+    rc.draw_line(Line2d(Vector2(0, 200), Vector2(400, 200)),
+                 Color.red(), Color.red())
+    rc.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
+                 Color.green(), Color.green())
 
-    v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -100, 0), Vector3(100, -100, 0)
+    v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -
+                                             100, 0), Vector3(100, -100, 0)
     tf = Transform()
     tf.translate(Vector3(200, 200, 0))
     tf.rotate_axis(Vector3.forward(), 45)

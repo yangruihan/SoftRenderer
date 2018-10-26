@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 
-from softrenderer.renderer.renderer import Renderer
+from softrenderer.render.renderer import Renderer
 from softrenderer.common.mesh import Mesh
 
 

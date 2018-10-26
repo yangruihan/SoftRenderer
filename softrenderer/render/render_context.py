@@ -7,11 +7,11 @@ from numpy import *
 
 from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.primitive import Line2d, Triangle2d
-from softrenderer.renderer import renderer as rd
-from softrenderer.renderer.shader import VertexShader, PixelShader
+from softrenderer.render import renderer as rd
+from softrenderer.render.shader import VertexShader, PixelShader
 
 
-class RendererContext:
+class RenderContext:
     E_LEFT = 1
     E_TOP = 1 << 1
     E_RIGHT = 1 << 2
@@ -262,7 +262,8 @@ class RendererContext:
         elif v2.y == v1.y:
             self._fill_bottom_flat_triangle(Triangle2d(v3, v1, v2, c3, c1, c2))
         else:
-            v4 = Vector2(int(v1.x + (v2.y - v1.y) * (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
+            v4 = Vector2(int(v1.x + (v2.y - v1.y) *
+                             (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
             v4.rasterization()
             c4 = triangle.get_pixel_color(v4)
 
@@ -273,8 +274,10 @@ class RendererContext:
         if not isinstance(triangle, Triangle2d):
             raise TypeError
 
-        inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)
-        inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
+        inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
+            (triangle.v2.y - triangle.v1.y)
+        inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
+            (triangle.v3.y - triangle.v1.y)
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
         rate_span = 1 / (triangle.v1.y - triangle.v3.y)
@@ -294,8 +297,10 @@ class RendererContext:
         if not isinstance(triangle, Triangle2d):
             raise TypeError
 
-        inv_slope1 = (triangle.v2.x - triangle.v1.x) / (triangle.v2.y - triangle.v1.y)
-        inv_slope2 = (triangle.v3.x - triangle.v1.x) / (triangle.v3.y - triangle.v1.y)
+        inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
+            (triangle.v2.y - triangle.v1.y)
+        inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
+            (triangle.v3.y - triangle.v1.y)
 
         cx1, cx2 = triangle.v1.x, triangle.v1.x
         rate_span = 1 / (triangle.v3.y - triangle.v1.y)
