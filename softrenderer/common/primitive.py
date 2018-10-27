@@ -1,8 +1,231 @@
 # -*- coding:utf-8 -*-
 
 
-from softrenderer.common.math.vector import Vector2
+from math import floor
+
+from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.types import Color
+from softrenderer.render import shader
+
+
+class Primitive:
+    pass
+
+
+class Point(Primitive):
+    """Point primitive
+    """
+
+    def __init__(self, properties):
+        if not isinstance(properties, dict):
+            raise TypeError
+
+        super().__init__()
+
+        self._properties = properties
+
+    def __str__(self):
+        return 'Point(%.5f, %.5f, %.5f)' % (self.x, self.y, self.z)
+
+    def __setitem__(self, key, value):
+        self._properties[key] = value
+
+    def __getitem__(self, key):
+        if key not in self._properties:
+            raise KeyError
+
+        return self._properties[key]
+
+    def rasterize(self):
+        pos = Vector3(floor(self.x), floor(self.y), self.z)
+        self['pos'] = pos
+
+    @property
+    def x(self):
+        return self['pos'].x
+
+    @property
+    def y(self):
+        return self['pos'].y
+
+    @property
+    def z(self):
+        return self['pos'].z
+
+    @property
+    def properties(self):
+        return self._properties
+
+
+class Line(Primitive):
+    """Line primitive
+    """
+
+    def __init__(self, start, end):
+        if not isinstance(start, Point) or \
+           not isinstance(end, Point):
+            raise TypeError
+
+        super().__init__()
+
+        self._start = start
+        self._end = end
+
+    @property
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, start):
+        if not isinstance(start, Point):
+            raise TypeError
+
+        self._start = start
+
+    @property
+    def end(self):
+        return self._end
+
+    @end.setter
+    def end(self, end):
+        if not isinstance(end, Point):
+            raise TypeError
+
+        self._end = end
+
+
+class Triangle(Primitive):
+    """Triangle Primitive
+    """
+
+    def __init__(self, v1, v2, v3):
+        if not isinstance(v1, Point) or \
+           not isinstance(v2, Point) or \
+           not isinstance(v3, Point):
+            raise TypeError
+        
+        super().__init__()
+
+        self._v1 = v1
+        self._v2 = v2
+        self._v3 = v3
+        self._scan_buffer = None
+        self._pixels = None
+
+    @property
+    def v1(self):
+        return self._v1
+
+    @v1.setter
+    def v1(self, v1):
+        if not isinstance(v1, Point):
+            raise TypeError
+
+        self._v1 = v1
+
+    @property
+    def v2(self):
+        return self._v2
+
+    @v2.setter
+    def v2(self, v2):
+        if not isinstance(v2, Point):
+            raise TypeError
+
+        self._v2 = v2
+
+    @property
+    def v3(self):
+        return self._v3
+
+    @v3.setter
+    def v3(self, v3):
+        if not isinstance(v3, Point):
+            raise TypeError
+
+        self._v3 = v3
+
+    @property
+    def pixels(self):
+        return self._pixels
+
+    def rasterize(self):
+        self.v1.rasterize()
+        self.v2.rasterize()
+        self.v3.rasterize()
+
+        # sorted by y axis
+        v1, v2, v3 = sorted([self.v1, self.v2, self.v3], key=lambda v: v.y)
+
+        self._scan_buffer = [[None, None] for _ in range(v3.y - v1.y + 1)]
+
+        vector1 = Vector2(v3.x - v1.x, v3.y - v1.y)
+        vector2 = Vector2(v2.x - v1.x, v2.y - v1.y)
+        handness =  0 if Vector2.cross(vector1, vector2) < 0 else 1
+
+        self._refresh_scan_buffer(v1, v3, handness, v1.y)
+        self._refresh_scan_buffer(v1, v2, 1 - handness, v1.y)
+        self._refresh_scan_buffer(v2, v3, 1 - handness, v1.y)
+
+    def _refresh_scan_buffer(self, v1, v2, handness, offset_y):
+        len = v2.y - v1.y
+        if len == 0:
+            return;
+        
+        slope = (v2.x - v1.x) / len
+        x = v1.x
+        t_slope = 1 / (len + 1)
+        t = 0
+
+        for y in range(v1.y, v2.y + 1):
+
+            # interpolation for vertex properties
+            vertex_properties = self._linear_interpolation(v1.properties,
+                                                           v2.properties,
+                                                           t)
+
+            vertex_properties['pos'].x = floor(x)
+            vertex_properties['pos'].y = y
+
+            self._scan_buffer[y - offset_y][handness] = vertex_properties
+            x += slope
+            t += t_slope
+
+    def pixel_shading(self, pixel_shader):
+        if not isinstance(pixel_shader, shader.PixelShader):
+            raise TypeError
+
+        self._pixels = []
+
+        scan_len = len(self._scan_buffer)
+        for i in range(scan_len - 1, -1, -1):
+            start, end = self._scan_buffer[i]
+            y = start['pos'].y
+
+            start_x = start['pos'].x
+            end_x = end['pos'].x
+
+            slope = 1 if end_x <= start_x else 1 / (end_x - start_x + 1)
+            t = 0
+
+            for pos in range(start_x, end_x + 1):
+                pixel_properties = self._linear_interpolation(start, end, t)
+                pixel_properties['pos'].x = pos
+                pixel_properties['pos'].y = y
+
+                color = pixel_shader.main(pixel_properties)
+
+                self._pixels.append((pixel_properties['pos'], color))
+
+                t += slope
+
+    def _linear_interpolation(self, vp1, vp2, t):
+        vertex_properties = {}
+        for k, v in vp1.items():
+            vp2_value = vp2[k]
+            vertex_properties[k] = v * (1 - t) + vp2_value * t
+
+        return vertex_properties
 
 
 class Line2d:

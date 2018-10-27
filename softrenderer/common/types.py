@@ -12,13 +12,45 @@ class Color:
     _Black = None
 
     def __init__(self, r, g, b, a):
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
+        self._r = r
+        self._g = g
+        self._b = b
+        self._a = a
 
     def __str__(self):
         return 'Color(%s, %s, %s, %s)' % (self.r, self.g, self.b, self.a)
+
+    @property
+    def r(self):
+        return self._r
+
+    @r.setter
+    def r(self, r):
+        self._r = int(r)
+
+    @property
+    def g(self):
+        return self._g
+
+    @g.setter
+    def g(self, g):
+        self._g = int(g)
+
+    @property
+    def b(self):
+        return self._b
+
+    @b.setter
+    def b(self, b):
+        self._b = int(b)
+
+    @property
+    def a(self):
+        return self._a
+
+    @a.setter
+    def a(self, a):
+        self._a = int(a)
 
     def __add__(self, other):
         if not isinstance(other, Color):

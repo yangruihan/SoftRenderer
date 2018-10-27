@@ -6,9 +6,13 @@ import logging
 from numpy import *
 
 from softrenderer.common.math.vector import Vector2, Vector3
-from softrenderer.common.primitive import Line2d, Triangle2d
+from softrenderer.common import primitive as pr
 from softrenderer.render import renderer as rd
 from softrenderer.render.shader import VertexShader, PixelShader
+from softrenderer.render.shader import _DefaultVertexShader
+from softrenderer.render.shader import _DefaultPixelShader
+
+from softrenderer.common.exceptions import IndexBufferCountValid
 
 
 class RenderContext:
@@ -22,8 +26,8 @@ class RenderContext:
         self._width = w
         self._height = h
         self._color_buffer = zeros((w + 1, h + 1), dtype=uint32)
-        self._vertex_shader = None
-        self._pixel_shader = None
+        self._vertex_shader = _DefaultVertexShader()
+        self._pixel_shader = _DefaultPixelShader()
 
     def clear(self):
         self._clear_color_buffer()
@@ -52,36 +56,80 @@ class RenderContext:
             logging.debug("[Render Error] fragment_shader is None")
             return
 
-        vertex_data_list = renderer.draw()
+        vertex_data = renderer.draw()
 
         # geometry stage
-        vertex_data_list = self._geometry_stage(vertex_data_list)
+        vertex_property_list = self._geometry_stage(vertex_data)
 
         # rasterizer stage
-        self._rasterizer_stage(vertex_data_list)
+        self._rasterizer_stage(vertex_property_list, vertex_data.index_buffer)
 
-    def _geometry_stage(self, vertex_data_list):
+    def _geometry_stage(self, vertex_data):
+        """Geometry stage for rendering pipeline
+
+        Args:
+            vertex_data: contains index buffer and vertex properties
+                for calculate
+
+        Returns:
+            vertex_properties_list: vertex property data through
+                vertex shading, clipping and screen mapping
+
+        """
         ret = []
 
         # vertex shading
-        for vertex_data in vertex_data_list:
-            ret.append(self._vertex_shader.main(vertex_data))
+        vertex_properties_list = vertex_data.get_vertex_properties_list()
+
+        for vertex_properties in vertex_properties_list:
+            vertex_properties['pos'] = self._vertex_shader.main(
+                vertex_properties)
+            ret.append(vertex_properties)
 
         # clipping
         ...
 
         # screen mapping
-        for i in range(len(ret)):
-            ndc = ret[i]['position']
+        for vertex_property in ret:
+            ndc = vertex_property['pos']
             screen_pos = Vector3((ndc.x + 1) * self.width / 2,
                                  (ndc.y + 1) * self.height / 2,
                                  ndc.z)
-            ret[i]['position'] = screen_pos
+
+            vertex_property['pos'] = screen_pos
 
         return ret
 
-    def _rasterizer_stage(self, vertex_data_list):
-        pass
+    def _rasterizer_stage(self, vertex_properties_list, index_buffer):
+        """Rasterizer stage
+
+        Args:
+            vertex_data: vertex datas for rendering
+
+        """
+        # triangle setup
+        if len(index_buffer) % 3 != 0:
+            raise IndexBufferCountValid
+
+        triangles = []
+        for i1, i2, i3 in zip(*[iter(index_buffer)] * 3):
+            triangles.append(pr.Triangle(pr.Point(vertex_properties_list[i1]),
+                                         pr.Point(vertex_properties_list[i2]),
+                                         pr.Point(vertex_properties_list[i3])))
+
+        # triangle traversal
+        for triangle in triangles:
+            triangle.rasterize()
+
+        # pixel shading
+        for triangle in triangles:
+            triangle.pixel_shading(self._pixel_shader)
+
+        # merging
+        for triangle in triangles:
+            for pixel in triangle.pixels:
+                pos, color = pixel
+                self._set_pixel(pos.x, pos.y, color)
 
     def _clear_color_buffer(self):
         self._color_buffer.fill(0)
@@ -244,12 +292,12 @@ class RenderContext:
                     code2 = encode(Vector2(x2, y2), min_pos, max_pos)
 
         if accept:
-            return True, Line2d(x1, y1, x2, y2)
+            return True, pr.Line2d(x1, y1, x2, y2)
         else:
             return False, None
 
     def draw_triangle(self, triangle):
-        if not isinstance(triangle, Triangle2d):
+        if not isinstance(triangle, pr.Triangle2d):
             raise TypeError
 
         (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
@@ -258,21 +306,24 @@ class RenderContext:
         v3.rasterization()
 
         if v2.y == v3.y:
-            self._fill_top_flat_triangle(Triangle2d(v1, v2, v3, c1, c2, c3))
+            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v3, c1, c2, c3))
         elif v2.y == v1.y:
-            self._fill_bottom_flat_triangle(Triangle2d(v3, v1, v2, c3, c1, c2))
+            self._fill_bottom_flat_triangle(
+                pr.Triangle2d(v3, v1, v2, c3, c1, c2))
         else:
             v4 = Vector2(int(v1.x + (v2.y - v1.y) *
                              (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
             v4.rasterization()
-            b1, b2, b3 = Triangle2d(v1, v2, v3, c1, c2, c3).get_barycentrix(v4)
+            b1, b2, b3 = pr.Triangle2d(
+                v1, v2, v3, c1, c2, c3).get_barycentrix(v4)
             c4 = c1 * b1 + c2 * b2 + c3 * b3
 
-            self._fill_top_flat_triangle(Triangle2d(v1, v2, v4, c1, c2, c4))
-            self._fill_bottom_flat_triangle(Triangle2d(v3, v2, v4, c3, c2, c4))
+            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v4, c1, c2, c4))
+            self._fill_bottom_flat_triangle(
+                pr.Triangle2d(v3, v2, v4, c3, c2, c4))
 
     def _fill_bottom_flat_triangle(self, triangle):
-        if not isinstance(triangle, Triangle2d):
+        if not isinstance(triangle, pr.Triangle2d):
             raise TypeError
 
         inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
@@ -289,16 +340,17 @@ class RenderContext:
 
         for y in range(triangle.v1.y, triangle.v2.y - 1, -1):
             # x1, x2 = int(cx1), int(cx2)
-            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)),
+            # triangle.get_pixel_color(Vector2(x2, y))
             temp_c = triangle.c1 * (1 - t)
             c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
-            self.draw_line(Line2d(int(cx1), y, int(cx2), y), c1, c2)
+            self.draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 -= inv_slope1
             cx2 -= inv_slope2
             t += rate_span
 
     def _fill_top_flat_triangle(self, triangle):
-        if not isinstance(triangle, Triangle2d):
+        if not isinstance(triangle, pr.Triangle2d):
             raise TypeError
 
         inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
@@ -315,10 +367,11 @@ class RenderContext:
 
         for y in range(triangle.v1.y, triangle.v2.y + 1):
             # x1, x2 = int(cx1), int(cx2)
-            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)), triangle.get_pixel_color(Vector2(x2, y))
+            # c1, c2 = triangle.get_pixel_color(Vector2(x1, y)),
+            # triangle.get_pixel_color(Vector2(x2, y))
             temp_c = triangle.c1 * (1 - t)
             c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
-            self.draw_line(Line2d(int(cx1), y, int(cx2), y), c1, c2)
+            self.draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 += inv_slope1
             cx2 += inv_slope2
             t += rate_span

@@ -7,12 +7,7 @@ from softrenderer.common.mesh import Mesh
 
 class MeshRenderer(Renderer):
 
-    def __init__(self, rc, mesh):
-        Renderer.__init__(self, rc)
-
-        if not isinstance(mesh, Mesh):
-            raise TypeError
-
+    def __init__(self, mesh):
         self._mesh = Mesh
         self._material = None
 
