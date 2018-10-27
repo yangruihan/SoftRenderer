@@ -378,10 +378,12 @@ class Matrix4x4:
             return Vector4(self[0] * other.x + self[1] * other.y + self[2] * other.z + self[3] * other.w,
                            self[4] * other.x + self[5] * other.y + self[6] * other.z + self[7] * other.w,
                            self[8] * other.x + self[9] * other.y + self[10] * other.z + self[11] * other.w,
-                           self[12] * other.x + self[13] * other.y + self[14] * other.z + self[15] * other.w, )
+                           self[12] * other.x + self[13] * other.y + self[14] * other.z + self[15] * other.w)
         elif isinstance(other, Vector3):
-            ret = self.__mul__(Vector4(other, 1))
-            return Vector3(ret.x, ret.y, ret.z)
+            return Vector4(self[0] * other.x + self[1] * other.y + self[2] * other.z + self[3],
+                           self[4] * other.x + self[5] * other.y + self[6] * other.z + self[7],
+                           self[8] * other.x + self[9] * other.y + self[10] * other.z + self[11],
+                           self[12] * other.x + self[13] * other.y + self[14] * other.z + self[15])
         else:
             try:
                 s = float(other)

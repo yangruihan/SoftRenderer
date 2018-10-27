@@ -25,7 +25,9 @@ class RenderContext:
     def __init__(self, w, h):
         self._width = w
         self._height = h
+        self._current_use_color_buffer = 0
         self._color_buffer = zeros((w + 1, h + 1), dtype=uint32)
+        self._color_buffer2 = zeros((w + 1, h + 1), dtype=uint32)
         self._vertex_shader = _DefaultVertexShader()
         self._pixel_shader = _DefaultPixelShader()
 
@@ -64,6 +66,9 @@ class RenderContext:
         # rasterizer stage
         self._rasterizer_stage(vertex_property_list, vertex_data.index_buffer)
 
+        # swap color buffer
+        self._current_use_color_buffer = (self._current_use_color_buffer + 1) % 2
+
     def _geometry_stage(self, vertex_data):
         """Geometry stage for rendering pipeline
 
@@ -90,11 +95,14 @@ class RenderContext:
         ...
 
         # screen mapping
+        half_width = self.width * 0.5
+        half_height = self.height * 0.5
         for vertex_property in ret:
             ndc = vertex_property['pos']
-            screen_pos = Vector3((ndc.x + 1) * self.width / 2,
-                                 (ndc.y + 1) * self.height / 2,
-                                 ndc.z)
+            inv_ndc_w = 1 / ndc.w
+            screen_pos = Vector3((ndc.x * inv_ndc_w + 1) * half_width,
+                                 (ndc.y * inv_ndc_w + 1) * half_height,
+                                 ndc.z * inv_ndc_w)
 
             vertex_property['pos'] = screen_pos
 
@@ -132,13 +140,26 @@ class RenderContext:
                 self._set_pixel(pos.x, pos.y, color)
 
     def _clear_color_buffer(self):
-        self._color_buffer.fill(0)
+        if self._current_use_color_buffer == 0:
+            self._color_buffer.fill(0)
+        else:
+            self._color_buffer2.fill(0)
 
     def _set_pixels(self, new_pixels):
-        self._color_buffer = new_pixels
+
+        if self._current_use_color_buffer == 0:
+            self._color_buffer = new_pixels
+        else:
+            self._color_buffer2 = new_pixels
 
     def _set_pixel(self, x, y, color):
-        self._color_buffer[x, y] = color.hex()
+        if x > self.width or x < 0 or y > self.height or y < 0:
+            return
+
+        if self._current_use_color_buffer == 0:
+            self._color_buffer[x, y] = color.hex()
+        else:
+            self._color_buffer2[x, y] = color.hex()
 
     def draw_pixel(self, x, y, color):
         if color.is_valid():
@@ -327,9 +348,9 @@ class RenderContext:
             raise TypeError
 
         inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
-            (triangle.v2.y - triangle.v1.y)
+                     (triangle.v2.y - triangle.v1.y)
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
-            (triangle.v3.y - triangle.v1.y)
+                     (triangle.v3.y - triangle.v1.y)
         if inv_slope1 < inv_slope2:
             inv_slope1, inv_slope2 = inv_slope2, inv_slope1
             triangle.c2, triangle.c3 = triangle.c3, triangle.c2
@@ -354,9 +375,9 @@ class RenderContext:
             raise TypeError
 
         inv_slope1 = (triangle.v2.x - triangle.v1.x) / \
-            (triangle.v2.y - triangle.v1.y)
+                     (triangle.v2.y - triangle.v1.y)
         inv_slope2 = (triangle.v3.x - triangle.v1.x) / \
-            (triangle.v3.y - triangle.v1.y)
+                     (triangle.v3.y - triangle.v1.y)
         if inv_slope1 > inv_slope2:
             inv_slope1, inv_slope2 = inv_slope2, inv_slope1
             triangle.c2, triangle.c3 = triangle.c3, triangle.c2
@@ -386,4 +407,7 @@ class RenderContext:
 
     @property
     def color_buffer(self):
-        return self._color_buffer
+        if self._current_use_color_buffer == 0:
+            return self._color_buffer2
+        else:
+            return self._color_buffer

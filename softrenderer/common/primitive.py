@@ -63,7 +63,7 @@ class Line(Primitive):
 
     def __init__(self, start, end):
         if not isinstance(start, Point) or \
-           not isinstance(end, Point):
+                not isinstance(end, Point):
             raise TypeError
 
         super().__init__()
@@ -100,10 +100,10 @@ class Triangle(Primitive):
 
     def __init__(self, v1, v2, v3):
         if not isinstance(v1, Point) or \
-           not isinstance(v2, Point) or \
-           not isinstance(v3, Point):
+                not isinstance(v2, Point) or \
+                not isinstance(v3, Point):
             raise TypeError
-        
+
         super().__init__()
 
         self._v1 = v1
@@ -161,7 +161,7 @@ class Triangle(Primitive):
 
         vector1 = Vector2(v3.x - v1.x, v3.y - v1.y)
         vector2 = Vector2(v2.x - v1.x, v2.y - v1.y)
-        handness =  0 if Vector2.cross(vector1, vector2) < 0 else 1
+        handness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
         self._refresh_scan_buffer(v1, v3, handness, v1.y)
         self._refresh_scan_buffer(v1, v2, 1 - handness, v1.y)
@@ -171,14 +171,13 @@ class Triangle(Primitive):
         len = v2.y - v1.y
         if len == 0:
             return;
-        
+
         slope = (v2.x - v1.x) / len
         x = v1.x
         t_slope = 1 / (len + 1)
         t = 0
 
         for y in range(v1.y, v2.y + 1):
-
             # interpolation for vertex properties
             vertex_properties = self._linear_interpolation(v1.properties,
                                                            v2.properties,
@@ -219,7 +218,8 @@ class Triangle(Primitive):
 
                 t += slope
 
-    def _linear_interpolation(self, vp1, vp2, t):
+    @staticmethod
+    def _linear_interpolation(vp1, vp2, t):
         vertex_properties = {}
         for k, v in vp1.items():
             vp2_value = vp2[k]
@@ -373,4 +373,3 @@ class Triangle2d:
             raise TypeError
 
         self._c3 = c3
-

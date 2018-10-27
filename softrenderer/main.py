@@ -8,6 +8,7 @@ from numpy import *
 
 import logging
 import time
+import threading
 
 from softrenderer.render.render_context import RenderContext
 from softrenderer.render.triangle_renderer import TriangleRenderer
@@ -19,78 +20,93 @@ from softrenderer.common.math.vector import Vector2, Vector3
 WIDTH = 400
 HEIGHT = 400
 
-rc = RenderContext(WIDTH, HEIGHT)
+RC = RenderContext(WIDTH, HEIGHT)
 
-pre_frame_time = 0
-timer = 0
+PRE_FRAME_TIME = 0
+TIMER = 0
 
-tr = TriangleRenderer(Vector3(0, 0.25, 0),
+TR = TriangleRenderer(Vector3(0, 0.25, 0),
                       Vector3(-0.25, -0.25, 0),
                       Vector3(0.25, -0.25, 0),
                       Color.red(),
                       Color.green(),
                       Color.blue())
 
+TF = Transform()
+TF.translate(Vector3(0, 0, 0))
+TF.scale = Vector3(1, 1, 1)
 
-def draw_func():
-    global pre_frame_time, timer, tr
+TR.set_tf(TF)
 
-    now_time = time.time()
-    delta_time = now_time - pre_frame_time
-    logging.info("Time span %f, fps %f", delta_time, 1 / delta_time)
-    pre_frame_time = now_time
+RUNNING = False
+
+
+def on_glut_draw():
+    global RC
 
     glClearColor(1, 1, 1, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    rc.clear()
-
-    rc.draw_line(Line2d(Vector2(0, 200), Vector2(400, 200)),
-                 Color.red(), Color.red())
-    rc.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
-                 Color.green(), Color.green())
-
-    timer += delta_time
-
-#    v1, v2, v3 = Vector3(0, 100, 0), Vector3(-100, -
-#                                             100, 0), Vector3(100, -100, 0)
-
-    tf = Transform()
-    tf.translate(Vector3(0, 0, 0))
-    tf.rotate_axis(Vector3.forward(), 45 * timer)
-    tf.scale = Vector3(2, 2, 1)
-#    world_mat = tf.get_local_to_world_matrix()
-#    v1, v2, v3 = world_mat * v1, world_mat * v2, world_mat * v3
-
-#    rc.draw_triangle(Triangle2d(Vector2(v1.x, v1.y),
-#                                Vector2(v2.x, v2.y),
-#                                Vector2(v3.x, v3.y),
-#                                Color.red(),
-#                                Color.green(),
-#                                Color.blue()))
-
-    tr.tf(tf)
-
-    rc.draw(tr)
-
     glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8,
-                 ascontiguousarray(rc.color_buffer.transpose()).data)
+                 ascontiguousarray(RC.color_buffer.transpose()).data)
     glFlush()
 
 
-def main():
-    global pre_frame_time
+def on_glut_close():
+    global RUNNING
+    RUNNING = False
 
+
+def render_thread_job():
+    global PRE_FRAME_TIME, TIMER, TR, TF, RC
+
+    while RUNNING:
+        now_time = time.time()
+        delta_time = now_time - PRE_FRAME_TIME
+        logging.info("Render Thread: Time span %f, fps %f", delta_time, 9999 if delta_time == 0 else 1 / delta_time)
+        PRE_FRAME_TIME = now_time
+
+        RC.clear()
+
+        RC.draw_line(Line2d(Vector2(0, 200), Vector2(400, 200)),
+                     Color.red(), Color.red())
+        RC.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
+                     Color.green(), Color.green())
+
+        TIMER += delta_time
+
+        TF.rotate_axis(Vector3.forward(), 10)
+
+        RC.draw(TR)
+
+
+RENDER_THREAD = threading.Thread(target=render_thread_job, name='render_thread')
+
+
+def main():
+    global PRE_FRAME_TIME, RENDER_THREAD, RUNNING
+
+    # init logging
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    pre_frame_time = time.time()
-
+    # init glut
     glutInit()
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
     glutInitWindowSize(400, 400)
-    glutCreateWindow("Test")
-    glutDisplayFunc(draw_func)
-    glutIdleFunc(draw_func)
+    glutCreateWindow("Software Render")
+    glutDisplayFunc(on_glut_draw)
+    glutIdleFunc(on_glut_draw)
+    glutCloseFunc(on_glut_close)
+
+    RUNNING = True
+
+    # record start time
+    PRE_FRAME_TIME = time.time()
+
+    # start render thread
+    RENDER_THREAD.start()
+
+    # start glut main loop
     glutMainLoop()
 
 

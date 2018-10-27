@@ -87,3 +87,7 @@ class Transform:
 
     def get_up(self):
         return self.rotation * Vector3.up()
+
+    @property
+    def is_dirty(self):
+        return self._is_dirty

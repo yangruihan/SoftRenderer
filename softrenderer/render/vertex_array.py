@@ -146,7 +146,7 @@ class VertexArray:
         return ret
 
     def get_vertex_properties_list(self):
-        """Get all vertexs properties
+        """Get all vertexes properties
         """
 
         count = len(self._vertex_buffer['pos'])
