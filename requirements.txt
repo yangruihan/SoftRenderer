@@ -1,5 +1,5 @@
 PyOpenGL=3.1.0
 PyOpenGL-accelerate=3.1.0
 numpy=1.15.3
-cython=0.92
+Cython=0.92
 joblib=0.12.5
