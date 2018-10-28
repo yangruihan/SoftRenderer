@@ -14,6 +14,8 @@ from softrenderer.render.shader import _DefaultPixelShader
 
 from softrenderer.common.exceptions import IndexBufferCountValid
 
+from softrenderer.debug import profiler
+
 
 class RenderContext:
     E_LEFT = 1
@@ -61,10 +63,14 @@ class RenderContext:
         vertex_data = renderer.draw()
 
         # geometry stage
+        profiler.Profiler.begin("geometry_stage")
         vertex_property_list = self._geometry_stage(vertex_data)
+        profiler.Profiler.end()
 
         # rasterizer stage
+        profiler.Profiler.begin("pixel_stage")
         self._rasterizer_stage(vertex_property_list, vertex_data.index_buffer)
+        profiler.Profiler.end()
 
         # swap color buffer
         self._current_use_color_buffer = (self._current_use_color_buffer + 1) % 2
@@ -112,10 +118,12 @@ class RenderContext:
         """Rasterizer stage
 
         Args:
-            vertex_data: vertex datas for rendering
+            vertex_properties_list: vertex data for rendering
+            index_buffer: index data for vertex
 
         """
         # triangle setup
+        profiler.Profiler.begin('pixel_stage.triangle_setup')
         if len(index_buffer) % 3 != 0:
             raise IndexBufferCountValid
 
@@ -124,20 +132,27 @@ class RenderContext:
             triangles.append(pr.Triangle(pr.Point(vertex_properties_list[i1]),
                                          pr.Point(vertex_properties_list[i2]),
                                          pr.Point(vertex_properties_list[i3])))
+        profiler.Profiler.end()
 
         # triangle traversal
+        profiler.Profiler.begin('pixel_stage.triangle_traversal')
         for triangle in triangles:
             triangle.rasterize()
+        profiler.Profiler.end()
 
         # pixel shading
+        profiler.Profiler.begin('pixel_stage.pixel_shading')
         for triangle in triangles:
             triangle.pixel_shading(self._pixel_shader)
+        profiler.Profiler.end()
 
         # merging
+        profiler.Profiler.begin('pixel_stage.merging')
         for triangle in triangles:
             for pixel in triangle.pixels:
                 pos, color = pixel
                 self._set_pixel(pos.x, pos.y, color)
+        profiler.Profiler.end()
 
     def _clear_color_buffer(self):
         if self._current_use_color_buffer == 0:

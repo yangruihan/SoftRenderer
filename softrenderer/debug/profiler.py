@@ -11,15 +11,20 @@ class Profiler:
             self.start_time = None
             self.end_time = None
             self.duration = None
+            self.times = 0
 
         def start(self):
-            self.start_time = time.time()
+            self.start_time = time.clock() * 1000
+            self.times += 1
             return self.start_time
 
         def end(self):
-            self.end_time = time.time()
+            self.end_time = time.clock() * 1000
             self.duration = self.end_time - self.start_time
             return self.duration
+
+        def clear(self):
+            self.times = 0
 
     ENABLE = 0
     DISABLE = 1
@@ -46,6 +51,10 @@ class Profiler:
     def _pop_event(self):
         event_name = self._event_stack.pop()
         self._data[event_name].end()
+
+    def _clear(self):
+        for v in self._data.values():
+            v.clear()
 
     @classmethod
     def config(cls, enable):
@@ -77,26 +86,34 @@ class Profiler:
         if not cls._enable:
             return
 
-        cls.instance()._before_update_time = time.time()
+        cls.instance()._before_update_time = time.clock() * 1000
 
     @classmethod
     def after_update(cls):
         if not cls._enable:
             return
+        cls.instance()._after_update_time = time.clock() * 1000
 
-        cls.instance()._after_update_time = time.time()
+        cls._statistics()
+
+        cls.instance()._clear()
 
     @classmethod
-    def statistics(cls):
+    def _statistics(cls):
         if not cls._enable:
             return
 
         print('\n----- Profiler Statistics -----')
         ins = cls.instance()
         sum_time = ins._after_update_time - ins._before_update_time
-        print('* Delta time: %f -- FPS: %f\n-' % (sum_time, 1 / sum_time))
+        print('* Delta time: %fms -- FPS: %f\n-' % (sum_time, 1000 / sum_time))
         for k, v in ins._data.items():
             module_level = len(k.split('.')) - 1
             indent = "\t" * module_level
-            print('- %s%s: %.2f%%, %f,' % (indent, k, v.duration * 100 / sum_time, v.duration))
+            print('- %s%s: | Percent %.2f%% | Duration %fms | Times: %d' % (
+                indent,
+                k,
+                v.duration * v.times * 100 / sum_time,
+                v.duration,
+                v.times))
         print('-\n-------------------------------')

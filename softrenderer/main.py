@@ -16,6 +16,8 @@ from softrenderer.common.primitive import Triangle2d, Line2d
 from softrenderer.common.transform import Transform
 from softrenderer.common.math.vector import Vector2, Vector3
 
+from softrenderer.debug.profiler import Profiler
+
 WIDTH = 400
 HEIGHT = 400
 
@@ -43,13 +45,15 @@ RUNNING = False
 def on_glut_main_loop():
     global PRE_FRAME_TIME
 
+    Profiler.before_update()
+
     now_time = time.time()
     delta_time = now_time - PRE_FRAME_TIME
-    logging.info("Render Thread: Time span %f, fps %f",
-                 delta_time, 9999 if delta_time == 0 else 1 / delta_time)
     PRE_FRAME_TIME = now_time
 
     render(delta_time)
+
+    Profiler.after_update()
 
 
 def on_glut_close():
@@ -73,7 +77,7 @@ def render(delta_time):
 
     TIMER += delta_time
 
-    TF.rotate_axis(Vector3.up(), 10)
+    # TF.rotate_axis(Vector3.up(), 10)
 
     RC.draw(TR)
 
@@ -88,6 +92,9 @@ def main():
 
     # init logging
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    # init profiler
+    Profiler.config(Profiler.ENABLE)
 
     # init glut
     glutInit()

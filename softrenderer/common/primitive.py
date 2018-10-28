@@ -7,6 +7,8 @@ from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.types import Color
 from softrenderer.render import shader
 
+from softrenderer.debug import profiler
+
 
 class Primitive:
     pass
@@ -157,8 +159,10 @@ class Triangle(Primitive):
         # sorted by y axis
         self._v1, self._v2, self._v3 = sorted([self._v1, self._v2, self._v3], key=lambda v: v.y)
 
+        # init scan buffer
         self._scan_buffer = [[None, None] for _ in range(self._v3.y - self._v1.y + 1)]
 
+        # calculate properties gradient
         properties_gradient = {}
         one_over_dx = 1.0 / ((self.v2.x - self.v3.x) * (self.v1.y - self.v3.y) - (self.v1.x - self.v3.x) * (
                 self.v2.y - self.v3.y))
@@ -169,16 +173,17 @@ class Triangle(Primitive):
                     self.v1.properties[k] - self.v3.properties[k]) * (self.v2.x - self.v3.x)) * -one_over_dx
             properties_gradient[k] = (gx, gy)
 
+        # calculate handedness
         vector1 = Vector2(self._v3.x - self._v1.x, self._v3.y - self._v1.y)
         vector2 = Vector2(self._v2.x - self._v1.x, self._v2.y - self._v1.y)
         handedness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
+        # scan edge
         self._refresh_scan_buffer(self._v1, self._v3, handedness, self._v1.y, properties_gradient)
         self._refresh_scan_buffer(self._v1, self._v2, 1 - handedness, self._v1.y, properties_gradient)
         self._refresh_scan_buffer(self._v2, self._v3, 1 - handedness, self._v1.y, properties_gradient)
 
     def _refresh_scan_buffer(self, min_y_v, max_y_v, handedness, offset_y, properties_gradient):
-
         len_y = max_y_v.y - min_y_v.y
         if len_y == 0:
             return
@@ -218,16 +223,23 @@ class Triangle(Primitive):
             slope = 1 if end_x <= start_x else 1 / (end_x - start_x + 1)
             t = 0
 
+            profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
             for pos in range(start_x, end_x + 1):
+                profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.interpolation')
                 pixel_properties = self._linear_interpolation(start, end, t)
+                profiler.Profiler.end()
+
                 pixel_properties['pos'].x = pos
                 pixel_properties['pos'].y = y
 
                 color = pixel_shader.main(pixel_properties)
 
+                profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.append')
                 self._pixels.append((pixel_properties['pos'], color))
+                profiler.Profiler.end()
 
                 t += slope
+            profiler.Profiler.end()
 
     @staticmethod
     def _linear_interpolation(vp1, vp2, t):
