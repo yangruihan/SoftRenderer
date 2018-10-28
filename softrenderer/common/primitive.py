@@ -155,32 +155,32 @@ class Triangle(Primitive):
         self.v3.rasterize()
 
         # sorted by y axis
-        v1, v2, v3 = sorted([self.v1, self.v2, self.v3], key=lambda v: v.y)
+        self._v1, self._v2, self._v3 = sorted([self._v1, self._v2, self._v3], key=lambda v: v.y)
 
-        self._scan_buffer = [[None, None] for _ in range(v3.y - v1.y + 1)]
+        self._scan_buffer = [[None, None] for _ in range(self._v3.y - self._v1.y + 1)]
 
-        vector1 = Vector2(v3.x - v1.x, v3.y - v1.y)
-        vector2 = Vector2(v2.x - v1.x, v2.y - v1.y)
+        vector1 = Vector2(self._v3.x - self._v1.x, self._v3.y - self._v1.y)
+        vector2 = Vector2(self._v2.x - self._v1.x, self._v2.y - self._v1.y)
         handness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
-        self._refresh_scan_buffer(v1, v3, handness, v1.y)
-        self._refresh_scan_buffer(v1, v2, 1 - handness, v1.y)
-        self._refresh_scan_buffer(v2, v3, 1 - handness, v1.y)
+        self._refresh_scan_buffer(self._v1, self._v3, handness, self._v1.y)
+        self._refresh_scan_buffer(self._v1, self._v2, 1 - handness, self._v1.y)
+        self._refresh_scan_buffer(self._v2, self._v3, 1 - handness, self._v1.y)
 
-    def _refresh_scan_buffer(self, v1, v2, handness, offset_y):
-        len = v2.y - v1.y
+    def _refresh_scan_buffer(self, min_y_v, max_y_v, handness, offset_y):
+        len = max_y_v.y - min_y_v.y
         if len == 0:
             return;
 
-        slope = (v2.x - v1.x) / len
-        x = v1.x
+        slope = (max_y_v.x - min_y_v.x) / len
+        x = min_y_v.x
         t_slope = 1 / (len + 1)
         t = 0
 
-        for y in range(v1.y, v2.y + 1):
+        for y in range(min_y_v.y, max_y_v.y + 1):
             # interpolation for vertex properties
-            vertex_properties = self._linear_interpolation(v1.properties,
-                                                           v2.properties,
+            vertex_properties = self._linear_interpolation(min_y_v.properties,
+                                                           max_y_v.properties,
                                                            t)
 
             vertex_properties['pos'].x = floor(x)
