@@ -160,45 +160,44 @@ class Triangle(Primitive):
         self._scan_buffer = [[None, None] for _ in range(self._v3.y - self._v1.y + 1)]
 
         properties_gradient = {}
-        one_over_dx = 1.0 / ((self.v2.x - self.v3.x) * (self.v1.y - self.v3.y) - (self.v1.x - self.v3.x) * (self.v2.y - self.v3.y))
+        one_over_dx = 1.0 / ((self.v2.x - self.v3.x) * (self.v1.y - self.v3.y) - (self.v1.x - self.v3.x) * (
+                self.v2.y - self.v3.y))
         for k, v in self.v1.properties.items():
-            gx = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.y - self.v3.y) - (self.v1.properties[k] - self.v3.properties[k]) * (self.v2.y - self.v3.y)) * one_over_dx
-            gy = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.x - self.v3.x) - (self.v1.properties[k] - self.v3.properties[k]) * (self.v2.x - self.v3.x)) * -one_over_dx
+            gx = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.y - self.v3.y) - (
+                    self.v1.properties[k] - self.v3.properties[k]) * (self.v2.y - self.v3.y)) * one_over_dx
+            gy = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.x - self.v3.x) - (
+                    self.v1.properties[k] - self.v3.properties[k]) * (self.v2.x - self.v3.x)) * -one_over_dx
             properties_gradient[k] = (gx, gy)
 
         vector1 = Vector2(self._v3.x - self._v1.x, self._v3.y - self._v1.y)
         vector2 = Vector2(self._v2.x - self._v1.x, self._v2.y - self._v1.y)
-        handness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
+        handedness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
-        self._refresh_scan_buffer(self._v1, self._v3, handness, self._v1.y, properties_gradient)
-        self._refresh_scan_buffer(self._v1, self._v2, 1 - handness, self._v1.y, properties_gradient)
-        self._refresh_scan_buffer(self._v2, self._v3, 1 - handness, self._v1.y, properties_gradient)
+        self._refresh_scan_buffer(self._v1, self._v3, handedness, self._v1.y, properties_gradient)
+        self._refresh_scan_buffer(self._v1, self._v2, 1 - handedness, self._v1.y, properties_gradient)
+        self._refresh_scan_buffer(self._v2, self._v3, 1 - handedness, self._v1.y, properties_gradient)
 
-    def _refresh_scan_buffer(self, min_y_v, max_y_v, handness, offset_y, properties_gradient):
-        len = max_y_v.y - min_y_v.y
-        if len == 0:
-            return;
+    def _refresh_scan_buffer(self, min_y_v, max_y_v, handedness, offset_y, properties_gradient):
 
-        slope = (max_y_v.x - min_y_v.x) / len
+        len_y = max_y_v.y - min_y_v.y
+        if len_y == 0:
+            return
+
+        slope = (max_y_v.x - min_y_v.x) / len_y
         x = min_y_v.x
-        t_slope = 1 / (len + 1)
+        t_slope = 1 / (len_y + 1)
         t = 0
 
         for i, y in enumerate(range(min_y_v.y, max_y_v.y + 1)):
-            # interpolation for vertex properties
-#            vertex_properties = self._linear_interpolation(min_y_v.properties,
-#                                                           max_y_v.properties,
-#                                                           t)
-
             vertex_properties = {}
-            for k,v in min_y_v.properties.items():
+            for k, v in min_y_v.properties.items():
                 gx, gy = properties_gradient[k]
                 vertex_properties[k] = v + (gy + gx * slope) * i
 
             vertex_properties['pos'].x = floor(x)
             vertex_properties['pos'].y = y
 
-            self._scan_buffer[y - offset_y][handness] = vertex_properties
+            self._scan_buffer[y - offset_y][handedness] = vertex_properties
             x += slope
             t += t_slope
 
