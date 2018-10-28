@@ -8,6 +8,8 @@ from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.types import Color
 from softrenderer.render import shader
 
+from softrenderer.cython import render_utils as ru
+
 from softrenderer.debug import profiler
 
 
@@ -224,9 +226,17 @@ class Triangle(Primitive):
             start, end = self._scan_buffer[i]
 
             profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
-            self._pixels.append((start['pos'], pixel_shader.main(start)))
-            self._pixels.append((end['pos'], pixel_shader.main(end)))
-            Triangle._scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader, self._pixels)
+            self._pixels.append((start['pos'].x,
+                                 start['pos'].y,
+                                 start['pos'].z,
+                                 pixel_shader.main(start).hex()))
+            self._pixels.append((end['pos'].x,
+                                 end['pos'].y,
+                                 end['pos'].z,
+                                 pixel_shader.main(end).hex()))
+            pixel_info = ru.scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader)
+            self._pixels += pixel_info
+#            Triangle._scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader, self._pixels)
             profiler.Profiler.end()
 
     @staticmethod
@@ -242,6 +252,7 @@ class Triangle(Primitive):
     def _pixel_shading_job(start, properties_gradient, index, x, y, pixel_shader, pixels):
         profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.interpolation')
         pixel_properties = {}
+#        ru.linear_interpolation(index, start, properties_gradient, pixel_properties)
         for k, v in start.items():
             gx, _ = properties_gradient[k]
             pixel_properties[k] = v + gx * index

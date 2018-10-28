@@ -14,6 +14,8 @@ from softrenderer.render.shader import _DefaultPixelShader
 
 from softrenderer.common.exceptions import IndexBufferCountValid
 
+from softrenderer.cython import render_utils as ru
+
 from softrenderer.debug import profiler
 
 
@@ -73,7 +75,8 @@ class RenderContext:
         profiler.Profiler.end()
 
         # swap color buffer
-        self._current_use_color_buffer = (self._current_use_color_buffer + 1) % 2
+        self._current_use_color_buffer = (
+            self._current_use_color_buffer + 1) % 2
 
     def _geometry_stage(self, vertex_data):
         """Geometry stage for rendering pipeline
@@ -148,10 +151,16 @@ class RenderContext:
 
         # merging
         profiler.Profiler.begin('pixel_stage.merging')
-        for triangle in triangles:
-            for pixel in triangle.pixels:
-                pos, color = pixel
-                self._set_pixel(pos.x, pos.y, color)
+        if self._current_use_color_buffer == 0:
+            for triangle in triangles:
+                ru.merging(triangle.pixels, self._color_buffer)
+        else:
+            for triangle in triangles:
+                ru.merging(triangle.pixels, self._color_buffer2)
+
+#            for pixel in triangle.pixels:
+#                pos, color = pixel
+#                self._set_pixel(pos.x, pos.y, color)
         profiler.Profiler.end()
 
     def _clear_color_buffer(self):

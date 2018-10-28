@@ -77,7 +77,7 @@ def render(delta_time):
 
     TIMER += delta_time
 
-    # TF.rotate_axis(Vector3.up(), 10)
+#    TF.rotate_axis(Vector3.up(), 10)
 
     RC.draw(TR)
 
