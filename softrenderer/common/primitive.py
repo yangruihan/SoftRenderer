@@ -2,6 +2,7 @@
 
 
 from math import floor
+from concurrent.futures import ThreadPoolExecutor
 
 from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.types import Color
@@ -113,6 +114,7 @@ class Triangle(Primitive):
         self._v3 = v3
         self._scan_buffer = None
         self._pixels = None
+        self._properties_gradient = {}
 
     @property
     def v1(self):
@@ -163,15 +165,19 @@ class Triangle(Primitive):
         self._scan_buffer = [[None, None] for _ in range(self._v3.y - self._v1.y + 1)]
 
         # calculate properties gradient
-        properties_gradient = {}
-        one_over_dx = 1.0 / ((self.v2.x - self.v3.x) * (self.v1.y - self.v3.y) - (self.v1.x - self.v3.x) * (
-                self.v2.y - self.v3.y))
+        self._properties_gradient = {}
+        try:
+            one_over_dx = 1.0 / ((self.v2.x - self.v3.x) * (self.v1.y - self.v3.y) - (self.v1.x - self.v3.x) * (
+                    self.v2.y - self.v3.y))
+        except ZeroDivisionError:
+            one_over_dx = 0
+
         for k, v in self.v1.properties.items():
             gx = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.y - self.v3.y) - (
                     self.v1.properties[k] - self.v3.properties[k]) * (self.v2.y - self.v3.y)) * one_over_dx
             gy = ((self.v2.properties[k] - self.v3.properties[k]) * (self.v1.x - self.v3.x) - (
                     self.v1.properties[k] - self.v3.properties[k]) * (self.v2.x - self.v3.x)) * -one_over_dx
-            properties_gradient[k] = (gx, gy)
+            self._properties_gradient[k] = (gx, gy)
 
         # calculate handedness
         vector1 = Vector2(self._v3.x - self._v1.x, self._v3.y - self._v1.y)
@@ -179,11 +185,11 @@ class Triangle(Primitive):
         handedness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
         # scan edge
-        self._refresh_scan_buffer(self._v1, self._v3, handedness, self._v1.y, properties_gradient)
-        self._refresh_scan_buffer(self._v1, self._v2, 1 - handedness, self._v1.y, properties_gradient)
-        self._refresh_scan_buffer(self._v2, self._v3, 1 - handedness, self._v1.y, properties_gradient)
+        self._refresh_scan_buffer(self._v1, self._v3, handedness)
+        self._refresh_scan_buffer(self._v1, self._v2, 1 - handedness)
+        self._refresh_scan_buffer(self._v2, self._v3, 1 - handedness)
 
-    def _refresh_scan_buffer(self, min_y_v, max_y_v, handedness, offset_y, properties_gradient):
+    def _refresh_scan_buffer(self, min_y_v, max_y_v, handedness):
         len_y = max_y_v.y - min_y_v.y
         if len_y == 0:
             return
@@ -196,13 +202,13 @@ class Triangle(Primitive):
         for i, y in enumerate(range(min_y_v.y, max_y_v.y + 1)):
             vertex_properties = {}
             for k, v in min_y_v.properties.items():
-                gx, gy = properties_gradient[k]
+                gx, gy = self._properties_gradient[k]
                 vertex_properties[k] = v + (gy + gx * slope) * i
 
             vertex_properties['pos'].x = floor(x)
             vertex_properties['pos'].y = y
 
-            self._scan_buffer[y - offset_y][handedness] = vertex_properties
+            self._scan_buffer[y - self._v1.y][handedness] = vertex_properties
             x += slope
             t += t_slope
 
@@ -213,33 +219,43 @@ class Triangle(Primitive):
         self._pixels = []
 
         scan_len = len(self._scan_buffer)
-        for i in range(scan_len - 1, -1, -1):
+
+        for i in range(0, scan_len):
             start, end = self._scan_buffer[i]
-            y = start['pos'].y
-
-            start_x = start['pos'].x
-            end_x = end['pos'].x
-
-            slope = 1 if end_x <= start_x else 1 / (end_x - start_x + 1)
-            t = 0
 
             profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
-            for pos in range(start_x, end_x + 1):
-                profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.interpolation')
-                pixel_properties = self._linear_interpolation(start, end, t)
-                profiler.Profiler.end()
-
-                pixel_properties['pos'].x = pos
-                pixel_properties['pos'].y = y
-
-                color = pixel_shader.main(pixel_properties)
-
-                profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.append')
-                self._pixels.append((pixel_properties['pos'], color))
-                profiler.Profiler.end()
-
-                t += slope
+            self._pixels.append((start['pos'], pixel_shader.main(start)))
+            self._pixels.append((end['pos'], pixel_shader.main(end)))
+            Triangle._scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader, self._pixels)
             profiler.Profiler.end()
+
+    @staticmethod
+    def _scan_line_pixel_shading_job(start, end, properties_gradient, pixel_shader, pixels):
+        y = start['pos'].y
+        start_x = start['pos'].x
+        end_x = end['pos'].x
+
+        for index, pos in enumerate(range(start_x + 1, end_x)):
+            Triangle._pixel_shading_job(start, properties_gradient, index, pos, y, pixel_shader, pixels)
+
+    @staticmethod
+    def _pixel_shading_job(start, properties_gradient, index, x, y, pixel_shader, pixels):
+        profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.interpolation')
+        pixel_properties = {}
+        for k, v in start.items():
+            gx, _ = properties_gradient[k]
+            pixel_properties[k] = v + gx * index
+
+        profiler.Profiler.end()
+
+        pixel_properties['pos'].x = x
+        pixel_properties['pos'].y = y
+
+        color = pixel_shader.main(pixel_properties)
+
+        profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x.append')
+        pixels.append((pixel_properties['pos'], color))
+        profiler.Profiler.end()
 
     @staticmethod
     def _linear_interpolation(vp1, vp2, t):
