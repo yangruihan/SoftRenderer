@@ -161,13 +161,13 @@ class Triangle(Primitive):
 
         vector1 = Vector2(self._v3.x - self._v1.x, self._v3.y - self._v1.y)
         vector2 = Vector2(self._v2.x - self._v1.x, self._v2.y - self._v1.y)
-        handness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
+        handedness = 0 if Vector2.cross(vector1, vector2) < 0 else 1
 
-        self._refresh_scan_buffer(self._v1, self._v3, handness, self._v1.y)
-        self._refresh_scan_buffer(self._v1, self._v2, 1 - handness, self._v1.y)
-        self._refresh_scan_buffer(self._v2, self._v3, 1 - handness, self._v1.y)
+        self._refresh_scan_buffer(self._v1, self._v3, handedness, self._v1.y)
+        self._refresh_scan_buffer(self._v1, self._v2, 1 - handedness, self._v1.y)
+        self._refresh_scan_buffer(self._v2, self._v3, 1 - handedness, self._v1.y)
 
-    def _refresh_scan_buffer(self, min_y_v, max_y_v, handness, offset_y):
+    def _refresh_scan_buffer(self, min_y_v, max_y_v, handedness, offset_y):
         len = max_y_v.y - min_y_v.y
         if len == 0:
             return;
@@ -186,7 +186,7 @@ class Triangle(Primitive):
             vertex_properties['pos'].x = floor(x)
             vertex_properties['pos'].y = y
 
-            self._scan_buffer[y - offset_y][handness] = vertex_properties
+            self._scan_buffer[y - offset_y][handedness] = vertex_properties
             x += slope
             t += t_slope
 
