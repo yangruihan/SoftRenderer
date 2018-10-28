@@ -27,9 +27,9 @@ TIMER = 0
 TR = TriangleRenderer(Vector3(0, 0.5, 0),
                       Vector3(-0.5, -0.5, 0),
                       Vector3(0.5, -0.5, 0),
-                      Color.red(),
+                      Color.blue(),
                       Color.green(),
-                      Color.blue())
+                      Color.red())
 
 TF = Transform()
 TF.translate(Vector3(0, 0, 0))
