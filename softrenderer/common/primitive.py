@@ -2,7 +2,8 @@
 
 
 from math import floor
-from concurrent.futures import ThreadPoolExecutor
+from joblib import Parallel, delayed
+import multiprocessing
 
 from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common.types import Color
@@ -11,6 +12,9 @@ from softrenderer.render import shader
 from softrenderer.cython import render_utils as ru
 
 from softrenderer.debug import profiler
+
+
+CORE_NUM = multiprocessing.cpu_count()
 
 
 class Primitive:
@@ -221,23 +225,43 @@ class Triangle(Primitive):
         self._pixels = []
 
         scan_len = len(self._scan_buffer)
+        pixel_infos = Parallel(n_jobs=CORE_NUM)(delayed(Triangle._scan_line_pixel_shading_job2)(*self._scan_buffer[i], self._properties_gradient, pixel_shader) for i in range(0, scan_len))
+        
+#        for i in range(0, scan_len):
+#            start, end = self._scan_buffer[i]
 
-        for i in range(0, scan_len):
-            start, end = self._scan_buffer[i]
+#            profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
+#            self._pixels.append((start['pos'].x,
+#                                 start['pos'].y,
+#                                 start['pos'].z,
+#                                 pixel_shader.main(start).hex()))
+#            self._pixels.append((end['pos'].x,
+#                                 end['pos'].y,
+#                                 end['pos'].z,
+#                                 pixel_shader.main(end).hex()))
+#            pixel_info = ru.scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader)
 
-            profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
-            self._pixels.append((start['pos'].x,
-                                 start['pos'].y,
-                                 start['pos'].z,
-                                 pixel_shader.main(start).hex()))
-            self._pixels.append((end['pos'].x,
-                                 end['pos'].y,
-                                 end['pos'].z,
-                                 pixel_shader.main(end).hex()))
-            pixel_info = ru.scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader)
-            self._pixels += pixel_info
+        self._pixels += sum(pixel_infos,[])
+
 #            Triangle._scan_line_pixel_shading_job(start, end, self._properties_gradient, pixel_shader, self._pixels)
-            profiler.Profiler.end()
+#            profiler.Profiler.end()
+
+    @staticmethod
+    def _scan_line_pixel_shading_job2(start, end, properties_gradient, pixel_shader):
+        profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
+        pixel_info = ru.scan_line_pixel_shading_job(start, end, properties_gradient, pixel_shader)
+        pixel_info.append((start['pos'].x,
+                             start['pos'].y,
+                             start['pos'].z,
+                             pixel_shader.main(start).hex()))
+        pixel_info.append((end['pos'].x,
+                             end['pos'].y,
+                             end['pos'].z,
+                             pixel_shader.main(end).hex()))
+
+        profiler.Profiler.end()
+
+        return pixel_info
 
     @staticmethod
     def _scan_line_pixel_shading_job(start, end, properties_gradient, pixel_shader, pixels):
