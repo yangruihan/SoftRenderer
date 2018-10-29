@@ -15,6 +15,6 @@ setup(
     ],
     ext_package='softrenderer.cython',
     ext_modules=[
-        Extension('render_utils', ['render_utils.c'])
+        Extension('render_utils', sources=['softrenderer/cython/render_utils.c'])
     ]
 )
