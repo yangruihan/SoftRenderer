@@ -11,5 +11,5 @@ class MeshRenderer(Renderer):
         self._mesh = Mesh
         self._material = None
 
-    def draw(self):
+    def draw(self, render_context):
         ...

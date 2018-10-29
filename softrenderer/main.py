@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-import logging
 import time
 import platform as pl
 
@@ -10,7 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from numpy import *
 
-from softrenderer.common.math.vector import Vector2, Vector3
+from softrenderer.common.math.vector import Vector2, Vector3, Vector4
 from softrenderer.common.primitive import Line2d
 from softrenderer.common.transform import Transform
 from softrenderer.common.types import Color
@@ -21,21 +20,19 @@ from softrenderer.render.triangle_renderer import TriangleRenderer
 WIDTH = 400
 HEIGHT = 400
 
-RC = RenderContext(WIDTH, HEIGHT)
-
 PRE_FRAME_TIME = 0
 TIMER = 0
 
-TR = TriangleRenderer(Vector3(0, 0.5, 0),
-                      Vector3(-0.5, -0.5, 0),
-                      Vector3(0.5, -0.5, 0),
+TR = TriangleRenderer(Vector4(0, 0.5, 0, 1),
+                      Vector4(-0.5, -0.5, 0, 1),
+                      Vector4(0.5, -0.5, 0, 1),
                       Color.blue(),
                       Color.green(),
                       Color.red())
 
 TF = Transform()
 TF.translate(Vector3(0, 0, 0))
-TF.scale = Vector3(1, 1, 1)
+TF.scale = Vector3(0.8, 0.8, 1)
 
 TR.set_tf(TF)
 
@@ -62,28 +59,28 @@ def on_glut_close():
 
 
 def render(delta_time):
-    global TIMER, TR, TF, RC
+    global TIMER, TR, TF
 
     # gl clear
     glClearColor(1, 1, 1, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    RC.clear()
+    RenderContext.clear()
 
-    RC.draw_line(Line2d(Vector2(0, 200), Vector2(400, 200)),
-                 Color.red(), Color.red())
-    RC.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
-                 Color.green(), Color.green())
+    RenderContext.draw_line(Line2d(Vector2(0, 200), Vector2(400, 200)),
+                            Color.red(), Color.red())
+    RenderContext.draw_line(Line2d(Vector2(200, 0), Vector2(200, 400)),
+                            Color.green(), Color.green())
 
     TIMER += delta_time
 
-    #    TF.rotate_axis(Vector3.up(), 10)
+    TF.rotate_axis(Vector3.up(), 10)
 
-    RC.draw(TR)
+    RenderContext.draw(TR)
 
     # gl flush
     glDrawPixels(WIDTH + 1, HEIGHT + 1, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8,
-                 ascontiguousarray(RC.color_buffer.transpose()).data)
+                 ascontiguousarray(RenderContext.color_buffer().transpose()).data)
     glFlush()
 
 
@@ -95,6 +92,9 @@ def main():
 
     # init profiler
     Profiler.config(Profiler.ENABLE)
+
+    # init RenderContext
+    RenderContext.set_screen_size(400, 400)
 
     # init glut
     glutInit()

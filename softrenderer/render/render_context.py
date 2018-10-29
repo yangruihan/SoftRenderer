@@ -2,21 +2,19 @@
 
 
 import logging
+from enum import Enum
 
 from numpy import *
 
-from softrenderer.common.math.vector import Vector2, Vector3
 from softrenderer.common import primitive as pr
+from softrenderer.common.exceptions import IndexBufferCountError
+from softrenderer.common.math.vector import Vector2
+from softrenderer.cython import render_utils as ru
+from softrenderer.debug import profiler
 from softrenderer.render import renderer as rd
 from softrenderer.render.shader import VertexShader, PixelShader
-from softrenderer.render.shader import _DefaultVertexShader
 from softrenderer.render.shader import _DefaultPixelShader
-
-from softrenderer.common.exceptions import IndexBufferCountValid
-
-from softrenderer.cython import render_utils as ru
-
-from softrenderer.debug import profiler
+from softrenderer.render.shader import _DefaultVertexShader
 
 
 class RenderContext:
@@ -26,176 +24,227 @@ class RenderContext:
     E_BOTTOM = 1 << 3
     E_IN = 0
 
-    def __init__(self, w, h):
-        self._width = w
-        self._height = h
-        self._current_use_color_buffer = 0
-        self._color_buffer = zeros((w + 1, h + 1), dtype=uint32)
-        self._color_buffer2 = zeros((w + 1, h + 1), dtype=uint32)
+    _Width = 0
+    _Height = 0
+
+    class BufferType(Enum):
+        ARRAY_BUFFER = 1
+        ELEMENT_ARRAY_BUFFER = 2
+
+    _instance = None
+
+    def __init__(self):
+        self._color_buffer = None
+
+        # shader
         self._vertex_shader = _DefaultVertexShader()
         self._pixel_shader = _DefaultPixelShader()
 
-    def clear(self):
-        self._clear_color_buffer()
+        # init vertex array buffer
+        self._vertex_array = {}
+        self._vertex_array_id_set = [_ for _ in range(1, 257)]
+        self._current_bind_vertex_array_id = -1
 
-    def bind_vertex_shader(self, shader=None):
+        # init buffer
+        self._buffers = {}
+        self._bind_buffer_id_map = {}
+        self._buffers_id_set = [_ for _ in range(1, 257)]
+
+        # array buffer layout
+        self._array_buffer_layout = None
+
+        self._vertex_count = 0
+        self._each_vertex_properties_count = 0
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = RenderContext()
+        return cls._instance
+
+    @classmethod
+    def set_screen_size(cls, width, height):
+        RenderContext._Width = width
+        RenderContext._Height = height
+
+        cls.instance()._color_buffer = zeros((width + 1, height + 1), dtype=uint32)
+        cls.instance()._color_buffer2 = zeros((width + 1, height + 1), dtype=uint32)
+
+    @classmethod
+    def gen_buffers(cls, count):
+        if count <= 0:
+            raise AttributeError('count cannot be zero')
+        else:
+            if count > len(cls.instance()._buffers_id_set):
+                raise AttributeError('no enough buffers')
+
+            if count == 1:
+                return cls.instance()._buffers_id_set.pop()
+            else:
+                return [cls.instance()._buffers_id_set.pop() for _ in range(count)]
+
+    @classmethod
+    def delete_buffers(cls, *args):
+        if len(args) == 0:
+            raise AttributeError('id list cannot be empty')
+
+        for buffer_id in args:
+            if buffer_id in cls.instance()._buffers:
+                del cls.instance()._buffers[buffer_id]
+                cls.instance()._buffers_id_set.append(buffer_id)
+
+    @classmethod
+    def bind_buffer(cls, buffer_type, buffer_id):
+        if buffer_id < 0:
+            raise AttributeError('id invalid')
+
+        # set current bind buffer id
+        if not isinstance(buffer_type, RenderContext.BufferType):
+            raise TypeError
+
+        cls.instance()._bind_buffer_id_map[buffer_type] = buffer_id
+
+        # bind buffer for vertex array
+        if cls.instance()._current_bind_vertex_array_id >= 0:
+            if cls.instance()._current_bind_vertex_array_id not in cls.instance()._vertex_array:
+                cls.instance()._vertex_array[cls.instance()._current_bind_vertex_array_id] = {buffer_type: buffer_id}
+            else:
+                cls.instance()._vertex_array[cls.instance()._current_bind_vertex_array_id][buffer_type] = buffer_id
+
+    @classmethod
+    def buffer_data(cls, buffer_type, data):
+        if not isinstance(buffer_type, RenderContext.BufferType):
+            raise TypeError
+
+        cls.instance()._buffers[buffer_type] = data
+
+    @classmethod
+    def gen_vertex_array(cls, count):
+        if count <= 0:
+            raise AttributeError('count cannot be zero')
+        else:
+            if count > len(cls.instance()._vertex_array_id_set):
+                raise AttributeError('no enough buffers')
+
+            if count == 1:
+                return cls.instance()._vertex_array_id_set.pop()
+            else:
+                return [cls.instance()._vertex_array_id_set.pop() for _ in range(count)]
+
+    @classmethod
+    def delete_vertex_array(cls, *args):
+        if len(args) == 0:
+            raise AttributeError('id list cannot be empty')
+
+        for vertex_array_id in args:
+            if vertex_array_id in cls.instance()._vertex_array:
+                del cls.instance()._vertex_array[vertex_array_id]
+                cls.instance()._vertex_array_id_set.append(vertex_array_id)
+
+    @classmethod
+    def bind_vertex_array(cls, vertex_array_id):
+        if vertex_array_id < 0:
+            raise AttributeError('id invalid')
+
+        cls._current_bind_vertex_array_id = vertex_array_id
+
+    @classmethod
+    def bind_array_buffer_layout(cls, layout):
+        cls.instance()._array_buffer_layout = layout
+
+    @classmethod
+    def delete_array_buffer_layout(cls):
+        cls.instance()._array_buffer_layout = None
+
+    @classmethod
+    def clear(cls):
+        cls.instance()._clear_color_buffer()
+
+    @classmethod
+    def bind_vertex_shader(cls, shader=None):
         if shader is not None and not isinstance(shader, VertexShader):
             raise TypeError
 
-        self._vertex_shader = shader
+        cls.instance()._vertex_shader = shader
 
-    def bind_pixel_shader(self, shader=None):
+    @classmethod
+    def bind_pixel_shader(cls, shader=None):
         if shader is not None and not isinstance(shader, PixelShader):
             raise TypeError
 
-        self._pixel_shader = shader
+        cls.instance()._pixel_shader = shader
 
-    def draw(self, renderer):
-        if not isinstance(renderer, rd.Renderer):
-            raise TypeError
+    @classmethod
+    def draw(cls, *args):
+        cls.instance()._draw(*args)
 
-        if self._vertex_shader is None:
-            logging.debug("[Render Error] vertex_shader is None")
-            return
+    @classmethod
+    def draw_pixel(cls, x, y, color):
+        cls.instance()._draw_pixel(x, y, color)
 
-        if self._pixel_shader is None:
-            logging.debug("[Render Error] fragment_shader is None")
-            return
+    @classmethod
+    def draw_line(cls, line, start_color, end_color):
+        cls.instance()._draw_line(line, start_color, end_color)
 
-        vertex_data = renderer.draw()
+    @classmethod
+    def draw_triangle(cls, triangle):
+        cls.instance()._draw_triangle(triangle)
 
-        # geometry stage
-        profiler.Profiler.begin("geometry_stage")
-        vertex_property_list = self._geometry_stage(vertex_data)
-        profiler.Profiler.end()
+    @classmethod
+    def color_buffer(cls):
+        return cls.instance()._get_color_buffer()
 
-        # rasterizer stage
-        profiler.Profiler.begin("pixel_stage")
-        self._rasterizer_stage(vertex_property_list, vertex_data.index_buffer)
-        profiler.Profiler.end()
+    @property
+    def vertex_count(self):
+        return self._vertex_count
 
-        # swap color buffer
-        self._current_use_color_buffer = (
-            self._current_use_color_buffer + 1) % 2
+    @property
+    def each_vertex_properties_count(self):
+        return self._each_vertex_properties_count
 
-    def _geometry_stage(self, vertex_data):
-        """Geometry stage for rendering pipeline
+    def _get_color_buffer(self):
+        return self._color_buffer
 
-        Args:
-            vertex_data: contains index buffer and vertex properties
-                for calculate
+    def _draw(self, *args):
+        argv_len = len(args)
+        if argv_len == 1:
+            if isinstance(args[0], rd.Renderer):
+                renderer = args[0]
+                renderer.draw(self)
+            else:
+                raise TypeError
+        elif argv_len == 0:
+            if self._vertex_shader is None:
+                logging.error("[Render Error] vertex_shader is None")
+                return
 
-        Returns:
-            vertex_properties_list: vertex property data through
-                vertex shading, clipping and screen mapping
+            if self._pixel_shader is None:
+                logging.error("[Render Error] fragment_shader is None")
+                return
 
-        """
-        ret = []
+            # geometry stage
+            profiler.Profiler.begin("geometry_stage")
+            array_buffer = self._geometry_stage()
+            profiler.Profiler.end()
 
-        # vertex shading
-        vertex_properties_list = vertex_data.get_vertex_properties_list()
-
-        for vertex_properties in vertex_properties_list:
-            vertex_properties['pos'] = self._vertex_shader.main(
-                vertex_properties)
-            ret.append(vertex_properties)
-
-        # clipping
-        ...
-
-        # screen mapping
-        half_width = self.width * 0.5
-        half_height = self.height * 0.5
-        for vertex_property in ret:
-            ndc = vertex_property['pos']
-            inv_ndc_w = 1 / ndc.w
-            screen_pos = Vector3((ndc.x * inv_ndc_w + 1) * half_width,
-                                 (ndc.y * inv_ndc_w + 1) * half_height,
-                                 ndc.z * inv_ndc_w)
-
-            vertex_property['pos'] = screen_pos
-
-        return ret
-
-    def _rasterizer_stage(self, vertex_properties_list, index_buffer):
-        """Rasterizer stage
-
-        Args:
-            vertex_properties_list: vertex data for rendering
-            index_buffer: index data for vertex
-
-        """
-        # triangle setup
-        profiler.Profiler.begin('pixel_stage.triangle_setup')
-        if len(index_buffer) % 3 != 0:
-            raise IndexBufferCountValid
-
-        triangles = []
-        for i1, i2, i3 in zip(*[iter(index_buffer)] * 3):
-            triangles.append(pr.Triangle(pr.Point(vertex_properties_list[i1]),
-                                         pr.Point(vertex_properties_list[i2]),
-                                         pr.Point(vertex_properties_list[i3])))
-        profiler.Profiler.end()
-
-        # triangle traversal
-        profiler.Profiler.begin('pixel_stage.triangle_traversal')
-        for triangle in triangles:
-            triangle.rasterize()
-        profiler.Profiler.end()
-
-        # pixel shading
-        profiler.Profiler.begin('pixel_stage.pixel_shading')
-        for triangle in triangles:
-            triangle.pixel_shading(self._pixel_shader)
-        profiler.Profiler.end()
-
-        # merging
-        profiler.Profiler.begin('pixel_stage.merging')
-        if self._current_use_color_buffer == 0:
-            for triangle in triangles:
-                ru.merging(triangle.pixels, self._color_buffer)
+            # rasterizer stage
+            profiler.Profiler.begin("pixel_stage")
+            self._rasterizer_stage(array_buffer)
+            profiler.Profiler.end()
         else:
-            for triangle in triangles:
-                ru.merging(triangle.pixels, self._color_buffer2)
+            raise TypeError('takes 0 or 1 positional argument but %d were given' % argv_len)
 
-#            for pixel in triangle.pixels:
-#                pos, color = pixel
-#                self._set_pixel(pos.x, pos.y, color)
-        profiler.Profiler.end()
-
-    def _clear_color_buffer(self):
-        if self._current_use_color_buffer == 0:
-            self._color_buffer.fill(0)
-        else:
-            self._color_buffer2.fill(0)
-
-    def _set_pixels(self, new_pixels):
-
-        if self._current_use_color_buffer == 0:
-            self._color_buffer = new_pixels
-        else:
-            self._color_buffer2 = new_pixels
-
-    def _set_pixel(self, x, y, color):
-        if x > self.width or x < 0 or y > self.height or y < 0:
-            return
-
-        if self._current_use_color_buffer == 0:
-            self._color_buffer[x, y] = color.hex()
-        else:
-            self._color_buffer2[x, y] = color.hex()
-
-    def draw_pixel(self, x, y, color):
+    def _draw_pixel(self, x, y, color):
         if color.is_valid():
             self._set_pixel(x, y, color)
 
-    def draw_line(self, line, color1, color2):
+    def _draw_line(self, line, color1, color2):
         logging.debug('[Log]Draw Line Call: (line: %s, color1: %s, color2: %s)' % (line,
                                                                                    color1,
                                                                                    color2))
 
         (ret, line) = self._cohen_sutherland_line_clip(line, Vector2.zero(),
-                                                       Vector2(self.width, self.height))
+                                                       Vector2(RenderContext._Width, RenderContext._Height))
 
         if not ret:
             logging.debug('[Log]Line was aborted')
@@ -208,7 +257,7 @@ class RenderContext:
 
         # draw a pixel
         if x1 == x2 and y1 == y2:
-            self.draw_pixel(x1, y1, color1)
+            self._draw_pixel(x1, y1, color1)
         # draw a vertical line
         elif x1 == x2:
             inc = 1 if y1 <= y2 else -1
@@ -219,7 +268,7 @@ class RenderContext:
                     color = color1
                 else:
                     color = color1 * (1 - t) + color2 * t
-                self.draw_pixel(x1, y, color)
+                self._draw_pixel(x1, y, color)
                 t += t_span
 
         # draw a horizontal line
@@ -232,7 +281,7 @@ class RenderContext:
                     color = color1
                 else:
                     color = color1 * (1 - t) + color2 * t
-                self.draw_pixel(x, y1, color)
+                self._draw_pixel(x, y1, color)
                 t += t_span
         else:
             dx = x2 - x1 if x1 < x2 else x1 - x2
@@ -252,13 +301,13 @@ class RenderContext:
                         color = color1
                     else:
                         color = color1 * (1 - t) + color2 * t
-                    self.draw_pixel(x, y, color)
+                    self._draw_pixel(x, y, color)
                     t += t_span
                     rem += dy
                     if rem >= dx:
                         rem -= dx
                         y += 1 if y2 >= y1 else -1
-                self.draw_pixel(x2, y2, color2)
+                self._draw_pixel(x2, y2, color2)
             else:
                 if y2 < y1:
                     x1, x2 = x2, x1
@@ -273,13 +322,119 @@ class RenderContext:
                         color = color1
                     else:
                         color = color1 * (1 - t) + color2 * t
-                    self.draw_pixel(x, y, color)
+                    self._draw_pixel(x, y, color)
                     t += t_span
                     rem += dx
                     if rem >= dy:
                         rem -= dy
                         x += 1 if x2 >= x1 else -1
-                self.draw_pixel(x2, y2, color2)
+                self._draw_pixel(x2, y2, color2)
+
+    def _draw_triangle(self, triangle):
+        if not isinstance(triangle, pr.Triangle2d):
+            raise TypeError
+
+        (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
+        v1.rasterization()
+        v2.rasterization()
+        v3.rasterization()
+
+        if v2.y == v3.y:
+            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v3, c1, c2, c3))
+        elif v2.y == v1.y:
+            self._fill_bottom_flat_triangle(
+                pr.Triangle2d(v3, v1, v2, c3, c1, c2))
+        else:
+            v4 = Vector2(int(v1.x + (v2.y - v1.y) *
+                             (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
+            v4.rasterization()
+            b1, b2, b3 = pr.Triangle2d(
+                v1, v2, v3, c1, c2, c3).get_barycentrix(v4)
+            c4 = c1 * b1 + c2 * b2 + c3 * b3
+
+            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v4, c1, c2, c4))
+            self._fill_bottom_flat_triangle(
+                pr.Triangle2d(v3, v2, v4, c3, c2, c4))
+
+    def _geometry_stage(self):
+        """Geometry stage for rendering pipeline
+        """
+        ret = []
+
+        array_buffer = self._buffers[RenderContext.BufferType.ARRAY_BUFFER]
+
+        # vertex shading
+        self._each_vertex_properties_count = sum(self._array_buffer_layout)
+        self._vertex_count = int(len(array_buffer) / self._each_vertex_properties_count)
+
+        for i in range(self._vertex_count):
+            start_pos = i * self._each_vertex_properties_count
+            ret += self._vertex_shader.main(array_buffer[start_pos: start_pos + self._each_vertex_properties_count])
+
+        # clipping
+        ...
+
+        # screen mapping
+        half_width = RenderContext._Width * 0.5
+        half_height = RenderContext._Height * 0.5
+        self._each_vertex_properties_count = int(len(ret) / self._vertex_count)
+        for i in range(self._vertex_count):
+            start_pos = i * self._each_vertex_properties_count
+            inv_ndc_w = 1.0 / ret[start_pos + 3]
+            ret[start_pos] = (ret[start_pos] * inv_ndc_w + 1) * half_width
+            ret[start_pos + 1] = (ret[start_pos + 1] * inv_ndc_w + 1) * half_height
+            ret[start_pos + 2] = (ret[start_pos + 2] * inv_ndc_w)
+
+        return ret
+
+    def _rasterizer_stage(self, array_buffer):
+        """Rasterizer stage
+        """
+        # triangle setup
+        profiler.Profiler.begin('pixel_stage.triangle_setup')
+        index_buffer = self._buffers[RenderContext.BufferType.ELEMENT_ARRAY_BUFFER]
+        if len(index_buffer) % 3 != 0:
+            raise IndexBufferCountError
+
+        triangles = []
+        for i1, i2, i3 in zip(*[iter(index_buffer)] * 3):
+            start_1 = i1 * self._each_vertex_properties_count
+            start_2 = i2 * self._each_vertex_properties_count
+            start_3 = i3 * self._each_vertex_properties_count
+            triangles.append(pr.Triangle(pr.Point(start_1, array_buffer),
+                                         pr.Point(start_2, array_buffer),
+                                         pr.Point(start_3, array_buffer)))
+        profiler.Profiler.end()
+
+        # triangle traversal
+        profiler.Profiler.begin('pixel_stage.triangle_traversal')
+        for triangle in triangles:
+            triangle.rasterize()
+        profiler.Profiler.end()
+
+        # pixel shading
+        profiler.Profiler.begin('pixel_stage.pixel_shading')
+        for triangle in triangles:
+            triangle.pixel_shading(self._pixel_shader)
+        profiler.Profiler.end()
+
+        # merging
+        profiler.Profiler.begin('pixel_stage.merging')
+        for triangle in triangles:
+            ru.merging(triangle.pixels, self._color_buffer)
+        profiler.Profiler.end()
+
+    def _clear_color_buffer(self):
+        self._color_buffer.fill(0)
+
+    def _set_pixels(self, new_pixels):
+        self._color_buffer = new_pixels
+
+    def _set_pixel(self, x, y, color):
+        if x > RenderContext._Width or x < 0 or y > RenderContext._Height or y < 0:
+            return
+
+        self._color_buffer[x, y] = color.hex()
 
     def _cohen_sutherland_line_clip(self, line, min_pos, max_pos):
         def encode(pos, _min_pos, _max_pos):
@@ -341,32 +496,6 @@ class RenderContext:
         else:
             return False, None
 
-    def draw_triangle(self, triangle):
-        if not isinstance(triangle, pr.Triangle2d):
-            raise TypeError
-
-        (v1, c1), (v2, c2), (v3, c3) = triangle.get_sorted_vector_by_y()
-        v1.rasterization()
-        v2.rasterization()
-        v3.rasterization()
-
-        if v2.y == v3.y:
-            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v3, c1, c2, c3))
-        elif v2.y == v1.y:
-            self._fill_bottom_flat_triangle(
-                pr.Triangle2d(v3, v1, v2, c3, c1, c2))
-        else:
-            v4 = Vector2(int(v1.x + (v2.y - v1.y) *
-                             (v3.x - v1.x) / (v3.y - v1.y)), v2.y)
-            v4.rasterization()
-            b1, b2, b3 = pr.Triangle2d(
-                v1, v2, v3, c1, c2, c3).get_barycentrix(v4)
-            c4 = c1 * b1 + c2 * b2 + c3 * b3
-
-            self._fill_top_flat_triangle(pr.Triangle2d(v1, v2, v4, c1, c2, c4))
-            self._fill_bottom_flat_triangle(
-                pr.Triangle2d(v3, v2, v4, c3, c2, c4))
-
     def _fill_bottom_flat_triangle(self, triangle):
         if not isinstance(triangle, pr.Triangle2d):
             raise TypeError
@@ -389,7 +518,7 @@ class RenderContext:
             # triangle.get_pixel_color(Vector2(x2, y))
             temp_c = triangle.c1 * (1 - t)
             c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
-            self.draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
+            self._draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 -= inv_slope1
             cx2 -= inv_slope2
             t += rate_span
@@ -416,22 +545,7 @@ class RenderContext:
             # triangle.get_pixel_color(Vector2(x2, y))
             temp_c = triangle.c1 * (1 - t)
             c1, c2 = temp_c + triangle.c2 * t, temp_c + triangle.c3 * t
-            self.draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
+            self._draw_line(pr.Line2d(int(cx1), y, int(cx2), y), c1, c2)
             cx1 += inv_slope1
             cx2 += inv_slope2
             t += rate_span
-
-    @property
-    def width(self):
-        return self._width
-
-    @property
-    def height(self):
-        return self._height
-
-    @property
-    def color_buffer(self):
-        if self._current_use_color_buffer == 0:
-            return self._color_buffer2
-        else:
-            return self._color_buffer

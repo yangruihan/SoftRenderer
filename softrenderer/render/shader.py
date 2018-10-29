@@ -1,6 +1,9 @@
 # -*- coding:utf-8 -*-
 
 
+from softrenderer.common.types import Color
+
+
 class Shader:
 
     def main(self, vertex_properties):
@@ -18,10 +21,10 @@ class PixelShader(Shader):
 class _DefaultVertexShader(VertexShader):
 
     def main(self, vertex_properties):
-        return vertex_properties['pos']
+        return vertex_properties
 
 
 class _DefaultPixelShader(PixelShader):
 
     def main(self, pixel_properties):
-        return pixel_properties['color']
+        return Color(pixel_properties[2], pixel_properties[3], pixel_properties[4], pixel_properties[5])

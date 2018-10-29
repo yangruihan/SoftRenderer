@@ -1,43 +1,39 @@
 # -*- coding:utf-8 -*-
 
 
+from softrenderer.render import render_context as rc
+
+
 class VertexArray:
     """Array for all vertex data
     """
 
-    def __init__(self, vertex_buffer, index_buffer):
-        """Init for vertex data
-
-        Args:
-            vertex_buffer: a dictionary for vertex data
-                such as:
-                    {
-                        "pos": []
-                        "color": []
-                        "normal": []
-                    }
-
-            index_buffer: a list for vertex index
-
-        Raises:
-            TypeError: if vertex_buffer is not a instance of dict or 
-                index_buffer is not a instance of list
-
-            AttributeError: if key 'pos' not in vertex_buffer
-
-        """
-
-        if not isinstance(vertex_buffer, dict):
-            raise TypeError
-
-        if 'pos' not in vertex_buffer:
-            raise AttributeError
-
-        if not isinstance(index_buffer, list):
-            raise TypeError
-
+    def __init__(self, vertex_buffer, layout_buffer, index_buffer):
         self._vertex_buffer = vertex_buffer
+        self._layout_buffer = layout_buffer
         self._index_buffer = index_buffer
+
+        self._renderer_id = rc.RenderContext.gen_vertex_array(1)
+        self.bind()
+        self._vertex_buffer_id, self._index_buffer_id = rc.RenderContext.gen_buffers(2)
+        rc.RenderContext.bind_buffer(rc.RenderContext.BufferType.ARRAY_BUFFER, self._vertex_buffer_id)
+        rc.RenderContext.buffer_data(rc.RenderContext.BufferType.ARRAY_BUFFER, vertex_buffer)
+        rc.RenderContext.bind_buffer(rc.RenderContext.BufferType.ELEMENT_ARRAY_BUFFER, self._index_buffer_id)
+        rc.RenderContext.buffer_data(rc.RenderContext.BufferType.ELEMENT_ARRAY_BUFFER, index_buffer)
+        rc.RenderContext.bind_array_buffer_layout(layout_buffer)
+
+        self.un_bind()
+
+    def bind(self):
+        rc.RenderContext.bind_vertex_array(self._renderer_id)
+
+    def un_bind(self):
+        rc.RenderContext.bind_vertex_array(0)
+
+    def delete(self):
+        rc.RenderContext.delete_buffers(self._vertex_buffer_id, self._index_buffer_id)
+        rc.RenderContext.delete_vertex_array(self._vertex_buffer_id)
+        rc.RenderContext.delete_array_buffer_layout()
 
     @property
     def vertex_buffer(self):
@@ -64,94 +60,13 @@ class VertexArray:
 
         self._index_buffer = index_buffer
 
-    def get_vertex_pos_list(self):
-        return self._vertex_buffer['pos']
+    @property
+    def layout_buffer(self):
+        return self._layout_buffer
 
-    def get_vertex_properties_list_for(self, key):
-        """Get vertex property list for some key
-
-        Args:
-            key: string key for property to get
-
-        Returns:
-            a flag: True if success else False
-            a list: all values for some property
-
-        Raises:
-            TypeError: if key is not instance of str
-
-        """
-
-        if not isinstance(key, str):
+    @layout_buffer.setter
+    def layout_buffer(self, layout_buffer):
+        if not isinstance(layout_buffer, list):
             raise TypeError
 
-        ret = []
-        if key not in self._vertex_buffer:
-            return False, ret
-
-        return True, self._vertex_buffer[key]
-
-    def get_vertex_property_at(self, key, index):
-        """Get vertex property at index for some key
-
-        Args:
-            key: string key for property to get
-            index: index position
-
-        Returns:
-            a flag: True if success else False
-            a value: value for key in property dict
-
-        Raises:
-            TypeError: if index is not instance of int
-                or key is not instance of str
-
-        """
-
-        if not isinstance(index, int):
-            raise TypeError
-
-        flag, ret = self.get_vertex_properties_list_for(key)
-
-        if flag is False:
-            return False, None
-
-        if len(ret) <= index:
-            return False, None
-
-        return True, ret[index]
-
-    def get_vertex_properties_at(self, index):
-        """Get vertex properties at index
-
-        Args:
-            index: index position
-
-        Returns:
-            a dict for all vertex properties at some index
-
-        Raises:
-            TypeError: if index is not instance of int
-            IndexError: if index is not valid
-
-        """
-
-        if not isinstance(index, int):
-            raise TypeError
-
-        ret = {}
-        for k, v in self._vertex_buffer.items():
-            ret[k] = v[index]
-
-        return ret
-
-    def get_vertex_properties_list(self):
-        """Get all vertexes properties
-        """
-
-        count = len(self._vertex_buffer['pos'])
-        ret = []
-        for i in range(count):
-            ret.append(self.get_vertex_properties_at(i))
-
-        return ret
+        self._layout_buffer = layout_buffer

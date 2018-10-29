@@ -1,5 +1,9 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 
-class IndexBufferCountValid(Exception):
+class IndexBufferCountError(Exception):
+    pass
+
+
+class BindBufferError(Exception):
     pass

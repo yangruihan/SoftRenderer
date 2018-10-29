@@ -3,5 +3,5 @@
 
 class Renderer:
 
-    def draw(self):
+    def draw(self, render_context):
         pass

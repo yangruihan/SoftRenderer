@@ -4,36 +4,35 @@
 cpdef void merging(list pixels, object color_buffer):
     cdef int x
     cdef int y
-    cdef float z
+    cdef double z
     cdef unsigned long color
 
     for x, y, z, color in pixels:
         color_buffer[x, y] = color
 
 
-cpdef list scan_line_pixel_shading_job(dict start, dict end, dict gradients, object pixel_shader):
-    cdef int y = start['pos'].y
-    cdef int start_x = start['pos'].x
-    cdef int end_x = end['pos'].x
+cpdef list scan_line_pixel_shading_job(list start, int end_x, list gradients, object pixel_shader):
+    cdef int start_x = start[0]
+    cdef int y = start[1]
 
     cdef int index = 0
-    cdef int pos
+    cdef int x
     cdef list ret = []
+    cdef list pixel_properties
 
-    for pos in range(start_x + 1, end_x):
-        pixel_properties = {}
-        linear_interpolation(index, start, gradients, pixel_properties)
-        ret.append((pos, y, pixel_properties['pos'].z, pixel_shader.main(pixel_properties).hex()))
+    cdef int i
+    cdef int properties_len = len(start)
+    cdef double gx
+    cdef double gy
+
+    for x in range(start_x + 1, end_x):
+        pixel_properties = [x, y]
+
+        for i in range(2, properties_len):
+            gx, gy = gradients[i]
+            pixel_properties.append(start[i] + gx * index)
+
+        ret.append((x, y, pixel_properties[2], pixel_shader.main(pixel_properties).hex()))
         index += 1
 
     return ret
-
-
-cpdef object linear_interpolation(int index, dict properties, dict gradients, dict out_dict):
-    cdef unicode key
-    cdef object value
-    cdef object gx
-    cdef object gy
-    for key, value in properties.items():
-        gx, gy = gradients[key]
-        out_dict[key] = value + gx * index
