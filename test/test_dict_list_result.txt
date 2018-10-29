@@ -1,0 +1,8 @@
+list time cost: 0.038756
+dict time cost: 0.054231
+c list time cost: 0.001202
+c dict time cost: 0.006457
+-----
+dict time is 1.399309x than list time
+dict time is 8.398766x than c dict time
+dict time is 45.130484x than c list time
