@@ -1,4 +1,4 @@
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 setup(
     name='softrenderer',
@@ -10,6 +10,11 @@ setup(
     packages=[
         'softrenderer',
         'softrenderer.common',
+        'softrenderer.debug',
         'softrenderer.render',
     ],
+    ext_package='softrenderer.cython',
+    ext_modules=[
+        Extension('render_utils', ['render_utils.c'])
+    ]
 )

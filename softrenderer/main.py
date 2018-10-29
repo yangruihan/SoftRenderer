@@ -100,7 +100,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
     glutInitWindowSize(400, 400)
-    glutCreateWindow("Software Render")
+    glutCreateWindow("Real-Time Software Rendering")
     glutDisplayFunc(on_glut_main_loop)
     glutIdleFunc(on_glut_main_loop)
 
