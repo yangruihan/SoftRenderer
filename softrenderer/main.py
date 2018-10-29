@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 
 
+import logging
+import time
+import platform as pl
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from numpy import *
 
-import logging
-import time
-
+from softrenderer.common.math.vector import Vector2, Vector3
+from softrenderer.common.primitive import Line2d
+from softrenderer.common.transform import Transform
+from softrenderer.common.types import Color
+from softrenderer.debug.profiler import Profiler
 from softrenderer.render.render_context import RenderContext
 from softrenderer.render.triangle_renderer import TriangleRenderer
-from softrenderer.common.types import Color
-from softrenderer.common.primitive import Triangle2d, Line2d
-from softrenderer.common.transform import Transform
-from softrenderer.common.math.vector import Vector2, Vector3
-
-from softrenderer.debug.profiler import Profiler
 
 WIDTH = 400
 HEIGHT = 400
@@ -77,7 +77,7 @@ def render(delta_time):
 
     TIMER += delta_time
 
-#    TF.rotate_axis(Vector3.up(), 10)
+    #    TF.rotate_axis(Vector3.up(), 10)
 
     RC.draw(TR)
 
@@ -103,7 +103,9 @@ def main():
     glutCreateWindow("Software Render")
     glutDisplayFunc(on_glut_main_loop)
     glutIdleFunc(on_glut_main_loop)
-    glutCloseFunc(on_glut_close)
+
+    if 'Darwin' not in pl.platform():
+        glutCloseFunc(on_glut_close)
 
     RUNNING = True
 
