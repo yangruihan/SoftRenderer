@@ -266,6 +266,9 @@ class Triangle(Primitive):
 
     @staticmethod
     def _scan_line_pixel_shading_job2(start, end, properties_gradient, pixel_shader):
+        if start is None or end is None:
+            return []
+
         profiler.Profiler.begin('pixel_stage.pixel_shading.scan_x')
         pixel_info = ru.scan_line_pixel_shading_job(start, end[0], properties_gradient, pixel_shader)
         pixel_info.append((start[0],

@@ -32,7 +32,9 @@ TR = TriangleRenderer(Vector4(0, 0.5, 0, 1),
 
 TF = Transform()
 TF.translate(Vector3(0, 0, 0))
-TF.scale = Vector3(0.8, 0.8, 1)
+TF._scale = Vector3(0.8, 0.8, 1)
+TF.rotate_axis(Vector3.right(), 20)
+TF.rotate_axis(Vector3.forward(), 30)
 
 TR.set_tf(TF)
 
@@ -75,6 +77,8 @@ def render(delta_time):
     TIMER += delta_time
 
     TF.rotate_axis(Vector3.up(), 10)
+
+    print(TF.rotation)
 
     RenderContext.draw(TR)
 

@@ -155,7 +155,7 @@ class TestTransformMethods(unittest.TestCase):
 
     def test_init(self):
         self.assertEqual(self._tf.position, Vector3.zero())
-        self.assertEqual(self._tf.rotation, Quaternion.identity())
+        self.assertEqual(self._tf.rotation, Quaternion.identity().euler_angle())
         self.assertEqual(self._tf.scale, Vector3.one())
 
     def test_transform(self):
